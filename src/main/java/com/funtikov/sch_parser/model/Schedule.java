@@ -1,6 +1,8 @@
 package com.funtikov.sch_parser.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -18,4 +20,13 @@ public class Schedule implements Serializable {
 
     private Date snapshotDate = new Date();
 
+
+    public String toString() {
+    ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

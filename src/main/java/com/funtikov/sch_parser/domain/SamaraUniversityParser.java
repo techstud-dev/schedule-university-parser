@@ -1,35 +1,99 @@
 package com.funtikov.sch_parser.domain;
 
-import com.funtikov.sch_parser.model.Schedule;
-import com.funtikov.sch_parser.model.ScheduleDay;
+import com.funtikov.sch_parser.model.*;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.time.DayOfWeek;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalTime;
+import java.util.*;
 
+@Component
+@Slf4j
 public class SamaraUniversityParser implements Parser {
 
     @Override
-    public Schedule parserSchedule(String url) throws IOException {
-        Document doc = Jsoup
-                .connect(url)
+    public Schedule parseSchedule(Long groupId) throws IOException {
+
+        final String[] evenParameters = {String.valueOf(groupId), "2"};
+        final String[] oddParameters = {String.valueOf(groupId), "1"};
+        String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId={0}&selectedWeek={1}";
+        final String evenUrl = MessageFormat.format(samaraUniversityScheduleUrl, evenParameters[0], evenParameters[1]);
+        final String oddUrl = MessageFormat.format(samaraUniversityScheduleUrl, oddParameters[0], oddParameters[1]);
+
+        Document evenDoc = Jsoup
+                .connect(evenUrl)
                 .userAgent(userAgent)
                 .referrer(referrer)
                 .get();
 
-        Element htmlClassSchedule = doc.getElementsByClass("schedule").first();
-        Map<DayOfWeek, ScheduleDay> scheduleEvenMap = getSchedulesSkeleton();
-        Map<DayOfWeek, ScheduleDay> scheduleOddMap = getSchedulesSkeleton();
+        Document oddDoc = Jsoup
+                .connect(oddUrl)
+                .userAgent(userAgent)
+                .referrer(referrer)
+                .get();
 
-        fillScheduleDayMap(htmlClassSchedule, scheduleEvenMap);
+        Map<Integer, Map<DayOfWeek, ScheduleDay>> weekSchedulesMap = getSchedules(evenDoc, oddDoc);
+
+        Schedule schedule = new Schedule();
+        schedule.setEvenWeekSchedule(weekSchedulesMap.get(2));
+        schedule.setOddWeekSchedule(weekSchedulesMap.get(1));
+        schedule.setSnapshotDate(new Date());
+
+        return schedule;
     }
 
-    private Map<DayOfWeek, ScheduleDay> getSchedulesSkeleton() {
-        Map<DayOfWeek, ScheduleDay> scheduleDayMap = new HashMap<>();
+    private Map<Integer, Map<DayOfWeek, ScheduleDay>> getSchedules(Document evenDoc, Document oddDoc) {
+        Map<Integer, Map<DayOfWeek, ScheduleDay>> scheduleDayMap = new LinkedHashMap<>();
+        Element evenElement = evenDoc.getElementsByClass("schedule").first();
+        Element oddElement = evenDoc.getElementsByClass("schedule").first();
+        scheduleDayMap.put(1, new HashMap<>());
+        scheduleDayMap.put(2, new HashMap<>());
+
+        //evenElement work
+        assert evenElement != null;
+        List<Element> scheduleItemElements = evenElement.
+                getElementsByClass("schedule__item")
+                .stream()
+                .toList();
+
+        List<Element> scheduleTimeSheets = evenElement
+                .getElementsByClass("schedule__time")
+                .stream()
+                .toList();
+
+        Map<Integer, List<Element>> scheduleItemElementsChunk = new LinkedHashMap<>();
+        scheduleItemElementsChunk.put(0, scheduleItemElements.subList(0, 5));
+        scheduleItemElementsChunk.put(1, scheduleItemElements.subList(6, 11));
+        scheduleItemElementsChunk.put(2, scheduleItemElements.subList(12, 17));
+        scheduleItemElementsChunk.put(3, scheduleItemElements.subList(18, 23));
+        scheduleItemElementsChunk.put(4, scheduleItemElements.subList(24, 29));
+        scheduleItemElementsChunk.put(5, scheduleItemElements.subList(30, 35));
+
+        for (int scheduleTimeSheet = 0; scheduleTimeSheet < scheduleTimeSheets.size(); scheduleTimeSheet++) {
+            if (scheduleTimeSheet == 0) {
+                scheduleDayMap.put(2,
+                        getSchedulesForWeek(scheduleTimeSheets.get(scheduleTimeSheet),
+                                scheduleItemElementsChunk.get(scheduleTimeSheet)));
+            }
+        }
+        return scheduleDayMap;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> getSchedulesForWeek(Element timeSheetElement, List<Element> scheduleItemElements) {
+        TimeSheet timeSheet = new TimeSheet();
+        List<String> timeSheetAttributes =
+                timeSheetElement.getElementsByClass("schedule__time-item").stream().map(Element::text).toList();
+        timeSheet.setFrom(LocalTime.parse(timeSheetAttributes.get(0)));
+        timeSheet.setTo(LocalTime.parse(timeSheetAttributes.get(1)));
+        Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
+        Map<TimeSheet, ScheduleObject> lessons = new LinkedHashMap<>();
+        lessons.put(timeSheet, new ScheduleObject());
         scheduleDayMap.put(DayOfWeek.MONDAY, new ScheduleDay());
         scheduleDayMap.put(DayOfWeek.TUESDAY, new ScheduleDay());
         scheduleDayMap.put(DayOfWeek.WEDNESDAY, new ScheduleDay());
@@ -37,10 +101,35 @@ public class SamaraUniversityParser implements Parser {
         scheduleDayMap.put(DayOfWeek.FRIDAY, new ScheduleDay());
         scheduleDayMap.put(DayOfWeek.SATURDAY, new ScheduleDay());
         scheduleDayMap.put(DayOfWeek.SUNDAY, new ScheduleDay());
+
+        for (int i = 0; i < scheduleItemElements.size(); i++) {
+            scheduleDayMap.get(DayOfWeek.of(i + 1)).setLessons(lessons);
+            scheduleDayMap.get(DayOfWeek.of(i + 1)).getLessons().put(timeSheet, getScheduleInfo(scheduleItemElements.get(i)));
+        }
         return scheduleDayMap;
     }
 
-    private void fillScheduleDayMap(Element htmlClassSchedule, Map<DayOfWeek, ScheduleDay> scheduleDayMap) {
+    private ScheduleObject getScheduleInfo(Element scheduleElement) {
+        //FIXME: Парсится адекватно только временной промежуток. Исправить
+        String lessonType = scheduleElement
+                .getElementsByClass("schedule__lesson-type-chip lesson-type-3__bg")
+                .text();
+        String lessonName = scheduleElement.getElementsByClass("body-text schedule__discipline").text();
+        String lessonPlace = scheduleElement.getElementsByClass("caption-text schedule__place").text();
+        String lessonTeacher = scheduleElement.getElementsByClass("schedule__teacher").text();
+        String lessonGroups = scheduleElement.getElementsByClass("schedule__groups").text();
+        ScheduleObject scheduleObject = new ScheduleObject();
 
+        scheduleObject.setName(lessonName);
+        scheduleObject.setPlace(lessonPlace);
+        scheduleObject.setTeacher(lessonTeacher);
+        try {
+            scheduleObject.setType(ScheduleType.valueOf(lessonType));
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal lesson type = {}", lessonType, e);
+        }
+
+        return scheduleObject;
     }
+
 }
