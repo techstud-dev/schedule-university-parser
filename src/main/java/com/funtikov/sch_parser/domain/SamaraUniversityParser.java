@@ -58,7 +58,7 @@ public class SamaraUniversityParser implements Parser {
         //evenElement work
         assert evenElement != null;
         List<Element> scheduleItemElements = evenElement.
-                getElementsByClass("schedule__item")
+                getElementsByClass("schedule__lesson-info")
                 .stream()
                 .toList();
 
@@ -73,7 +73,6 @@ public class SamaraUniversityParser implements Parser {
         scheduleItemElementsChunk.put(2, scheduleItemElements.subList(12, 17));
         scheduleItemElementsChunk.put(3, scheduleItemElements.subList(18, 23));
         scheduleItemElementsChunk.put(4, scheduleItemElements.subList(24, 29));
-        scheduleItemElementsChunk.put(5, scheduleItemElements.subList(30, 35));
 
         for (int scheduleTimeSheet = 0; scheduleTimeSheet < scheduleTimeSheets.size(); scheduleTimeSheet++) {
             if (scheduleTimeSheet == 0) {
