@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -17,6 +18,6 @@ public class ScheduleDay {
 
     private Date date;
 
-    private Map<TimeSheet, ScheduleObject> lessons;
+    private Map<TimeSheet, List<ScheduleObject>> lessons;
 
 }
