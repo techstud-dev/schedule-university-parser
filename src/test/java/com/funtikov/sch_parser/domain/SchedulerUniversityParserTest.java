@@ -7,7 +7,7 @@ import java.io.IOException;
 public class SchedulerUniversityParserTest {
 
     @Test
-    public void testParse() throws IOException {
+    public void testParse() throws Exception {
         Parser parser = new SamaraUniversityParser();
         System.out.println(parser.parseSchedule(604071802L));
     }
