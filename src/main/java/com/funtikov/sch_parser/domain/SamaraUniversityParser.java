@@ -1,7 +1,6 @@
 package com.funtikov.sch_parser.domain;
 
 import com.funtikov.sch_parser.model.*;
-import com.funtikov.sch_parser.util.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -47,9 +46,7 @@ public class SamaraUniversityParser implements Parser {
             schedule.setOddWeekSchedule(weekSchedulesMap.get(1));
             schedule.setSnapshotDate(new Date());
             return schedule;
-        }
-
-        catch (HttpStatusException e) {
+        } catch (HttpStatusException e) {
             log.error(e.getMessage(), e);
             return null;
         }

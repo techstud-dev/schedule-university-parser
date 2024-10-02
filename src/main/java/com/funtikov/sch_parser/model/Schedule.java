@@ -22,7 +22,7 @@ public class Schedule implements Serializable {
 
 
     public String toString() {
-    ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.writeValueAsString(this);
         } catch (JsonProcessingException e) {

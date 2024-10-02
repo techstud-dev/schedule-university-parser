@@ -1,7 +1,6 @@
 package com.funtikov.sch_parser.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 
 @AllArgsConstructor

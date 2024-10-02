@@ -1,6 +1,5 @@
 package com.funtikov.sch_parser.model.api.response.sseu;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.io.Serializable;

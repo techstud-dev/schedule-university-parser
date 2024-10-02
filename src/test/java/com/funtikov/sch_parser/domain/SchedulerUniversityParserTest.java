@@ -2,8 +2,6 @@ package com.funtikov.sch_parser.domain;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 public class SchedulerUniversityParserTest {
 
     @Test
