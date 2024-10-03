@@ -3,22 +3,29 @@ package com.funtikov.sch_parser.domain;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.funtikov.sch_parser.model.Schedule;
 import com.funtikov.sch_parser.model.api.response.sseu.SseuApiResponse;
+import com.funtikov.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @RequiredArgsConstructor
+@Component
 public class SseuParser implements Parser {
     private final String apiUrl = "https://lms3.sseu.ru/api/v1/schedule-board/by-group?groupId={0}&scheduleWeek={1}&date={2}";
 
     private final CloseableHttpClient httpClient;
+
+    private final MappingService mappingService;
 
     @Override
     public Schedule parseSchedule(Long groupId) throws Exception {
@@ -26,21 +33,24 @@ public class SseuParser implements Parser {
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String formattedDate = currentDate.format(formatter);
+        String[] currentWeekUrlParams;
+        String[] nextWeekUrlParams;
 
-        String[] oddWeekUrlParams = {groupId.toString(), "CURRENT", formattedDate.split("-")[0] + "-09-03"};
-        String[] evenWeekUrlParams = {groupId.toString(), "NEXT", formattedDate.split("-")[0] + "-09-03"};
+        currentWeekUrlParams = new String[]{groupId.toString(), "CURRENT", formattedDate};
+        nextWeekUrlParams = new String[]{groupId.toString(), "NEXT", formattedDate};
 
-        String oddWeekUrl = MessageFormat.format(apiUrl, oddWeekUrlParams[0], oddWeekUrlParams[1], oddWeekUrlParams[2]);
-        String evenWeekUrl = MessageFormat.format(apiUrl, evenWeekUrlParams[0], evenWeekUrlParams[1], evenWeekUrlParams[2]);
+        String currentWeekUrl = MessageFormat.format(apiUrl,  currentWeekUrlParams[0], currentWeekUrlParams[1],  currentWeekUrlParams[2]);
+        String nextWeekUrl = MessageFormat.format(apiUrl, nextWeekUrlParams[0], nextWeekUrlParams[1], nextWeekUrlParams[2]);
 
-        HttpGet getOddRequest = new HttpGet(oddWeekUrl);
-        HttpGet getEvenRequest = new HttpGet(evenWeekUrl);
+        HttpGet getOddRequest = new HttpGet(currentWeekUrl);
+        HttpGet getEvenRequest = new HttpGet(nextWeekUrl);
 
         ObjectMapper mapper = new ObjectMapper();
-        SseuApiResponse oddWeekResponse = mapper.readValue(getSchduleJsonAsString(getOddRequest), SseuApiResponse.class);
-        SseuApiResponse evenWeekResponse = mapper.readValue(getSchduleJsonAsString(getEvenRequest), SseuApiResponse.class);
+        SseuApiResponse currentWeekResponse = mapper.readValue(getSchduleJsonAsString(getOddRequest), SseuApiResponse.class);
+        SseuApiResponse nextWeekResponse = mapper.readValue(getSchduleJsonAsString(getEvenRequest), SseuApiResponse.class);
+        List<SseuApiResponse> sseuApiResponseList = List.of(currentWeekResponse, nextWeekResponse);
 
-        return null;
+        return mappingService.mapSseuToSchedule(sseuApiResponseList);
     }
 
     private String getSchduleJsonAsString(HttpGet getRequest) throws IOException {
