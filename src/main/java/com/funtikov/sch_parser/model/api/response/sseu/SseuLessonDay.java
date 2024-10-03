@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Getter
-public class SseuLesson implements Serializable {
+public class SseuLessonDay implements Serializable {
 
     private SseuWorkPlan workPlan;
 

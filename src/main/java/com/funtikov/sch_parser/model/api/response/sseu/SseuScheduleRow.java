@@ -13,11 +13,11 @@ public class SseuScheduleRow implements Serializable {
 
     private String name;
 
-    private Map<String, List<SseuLesson>> daySchedule = new LinkedHashMap<>();
+    private Map<String, List<SseuLessonDay>> daySchedule = new LinkedHashMap<>();
 
     // Метод для добавления неизвестных полей (например, дней недели) в карту
     @JsonAnySetter
-    public void setDaySchedule(String day, List<SseuLesson> lessons) {
+    public void setDaySchedule(String day, List<SseuLessonDay> lessons) {
         daySchedule.put(day, lessons);
     }
 }

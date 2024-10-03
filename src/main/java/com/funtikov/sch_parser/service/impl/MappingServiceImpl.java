@@ -2,15 +2,14 @@ package com.funtikov.sch_parser.service.impl;
 
 import com.funtikov.sch_parser.model.Schedule;
 import com.funtikov.sch_parser.model.ScheduleDay;
+import com.funtikov.sch_parser.model.ScheduleObject;
+import com.funtikov.sch_parser.model.TimeSheet;
 import com.funtikov.sch_parser.model.api.response.sseu.SseuApiResponse;
 import com.funtikov.sch_parser.service.MappingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
@@ -66,7 +65,16 @@ public class MappingServiceImpl implements MappingService {
 
     private void fillSchedule(SseuApiResponse sseuSchedule, Map<DayOfWeek, ScheduleDay> weekSchedule) {
         sseuSchedule.getBody().forEach(body -> {
-         //TODO: Implement this method
+            weekSchedule.forEach((day, scheduleDay) -> {
+                        if (day.name().equalsIgnoreCase(body.getDaySchedule().keySet().iterator().next())) {
+                            Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
+                            if(lessons.containsKey(new TimeSheet(LocalTime.parse(body.getName(), DateTimeFormatter.ofPattern("HH:mm")), null))) {
+                                scheduleDay.getLessons().put(new TimeSheet(LocalTime.parse(body.getName(), DateTimeFormatter.ofPattern("HH:mm")), null),
+                                        null); //FIXME: Переделать на добавление урока
+                            }
+                        }
+                    }
+            );
         });
     }
 }

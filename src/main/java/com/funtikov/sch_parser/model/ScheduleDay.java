@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,6 @@ public class ScheduleDay {
 
     private Date date;
 
-    private Map<TimeSheet, List<ScheduleObject>> lessons;
+    private Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
 
 }
