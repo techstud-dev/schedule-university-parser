@@ -1,10 +1,9 @@
 package com.funtikov.sch_parser.service.impl;
 
-import com.funtikov.sch_parser.model.Schedule;
-import com.funtikov.sch_parser.model.ScheduleDay;
-import com.funtikov.sch_parser.model.ScheduleObject;
-import com.funtikov.sch_parser.model.TimeSheet;
+import com.funtikov.sch_parser.model.*;
 import com.funtikov.sch_parser.model.api.response.sseu.SseuApiResponse;
+import com.funtikov.sch_parser.model.api.response.sseu.SseuLessonDay;
+import com.funtikov.sch_parser.model.api.response.sseu.SseuSubject;
 import com.funtikov.sch_parser.service.MappingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -64,17 +63,82 @@ public class MappingServiceImpl implements MappingService {
     }
 
     private void fillSchedule(SseuApiResponse sseuSchedule, Map<DayOfWeek, ScheduleDay> weekSchedule) {
-        sseuSchedule.getBody().forEach(body -> {
-            weekSchedule.forEach((day, scheduleDay) -> {
-                        if (day.name().equalsIgnoreCase(body.getDaySchedule().keySet().iterator().next())) {
-                            Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
-                            if(lessons.containsKey(new TimeSheet(LocalTime.parse(body.getName(), DateTimeFormatter.ofPattern("HH:mm")), null))) {
-                                scheduleDay.getLessons().put(new TimeSheet(LocalTime.parse(body.getName(), DateTimeFormatter.ofPattern("HH:mm")), null),
-                                        null); //FIXME: Переделать на добавление урока
-                            }
-                        }
+        for (int i = 0; i < sseuSchedule.getBody().size(); i++) {
+            LocalTime from = LocalTime.parse(sseuSchedule.getBody().get(i).getName());
+
+            int finalI = i;
+            sseuSchedule.getBody().get(i).getDaySchedule().forEach((day, daySchedule) -> {
+                if (weekSchedule.containsKey(DayOfWeek.valueOf(day.toUpperCase()))) {
+                    DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase());
+                    Map<TimeSheet, List<ScheduleObject>> lessons = weekSchedule.get(dayOfWeek).getLessons();
+                    TimeSheet timeSheet = getTimeSheet(from, lessons.keySet());
+                    if (timeSheet == null) {
+                        timeSheet = new TimeSheet();
+                        timeSheet.setFrom(from);
+                        timeSheet.setTo(null);
+                        lessons.put(timeSheet, new ArrayList<>());
                     }
-            );
-        });
+                    List<ScheduleObject> scheduleObjects = lessons.get(timeSheet);
+                    scheduleObjects.add(mapSseuLessonToScheduleObject(sseuSchedule.getBody().get(finalI).getDaySchedule().get(day)));
+                }
+            });
+        }
     }
+
+    private ScheduleObject mapSseuLessonToScheduleObject(List<SseuLessonDay> daySchedule) {
+        ScheduleObject scheduleObject = new ScheduleObject();
+        if (daySchedule == null || daySchedule.isEmpty()) {
+            // Handle the case when daySchedule is empty
+            return null; // or return an empty ScheduleObject, depending on your requirements
+        }
+
+        SseuLessonDay lessonDay = daySchedule.get(0);
+
+        if (lessonDay.getWorkPlan() != null && lessonDay.getWorkPlan().getDiscipline() != null) {
+            scheduleObject.setName(lessonDay.getWorkPlan().getDiscipline().getName());
+        }
+
+        if (lessonDay.getWorkPlan() != null && lessonDay.getWorkPlan().getLessonTypes() != null) {
+            scheduleObject.setType(mapSseuLessonTypeToScheduleType(lessonDay.getWorkPlan().getLessonTypes().getName()));
+        }
+
+        if (lessonDay.getSubject() != null && !lessonDay.getSubject().isEmpty()) {
+            SseuSubject subject = lessonDay.getSubject().get(0);
+
+            if (subject.getName() != null) {
+                scheduleObject.setTeacher(subject.getName());
+            }
+
+            if (subject.getAudiences() != null && !subject.getAudiences().isEmpty()) {
+                scheduleObject.setPlace(subject.getAudiences().get(0).getItemName());
+            }
+        }
+
+        if (lessonDay.getWorkPlan() != null && lessonDay.getWorkPlan().getGroup() != null) {
+            String groupName = lessonDay.getWorkPlan().getGroup().getName();
+            if (!scheduleObject.getGroups().contains(groupName)) {
+                scheduleObject.getGroups().add(groupName);
+            }
+        }
+
+        return scheduleObject;
+    }
+
+    private TimeSheet getTimeSheet(LocalTime from, Set<TimeSheet> keySet) {
+        return keySet.stream()
+                .filter(timeSheet -> timeSheet.getFrom().equals(from))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private ScheduleType mapSseuLessonTypeToScheduleType(String lessonType) {
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "Лекции", ScheduleType.LECTURE,
+                "Практические", ScheduleType.PRACTICE,
+                "Пересдача Зачет", ScheduleType.EXAM,
+                "Пересдача Экзамен", ScheduleType.EXAM);
+        return scheduleTypeMap.get(lessonType);
+    }
+
+
 }
