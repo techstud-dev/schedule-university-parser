@@ -36,13 +36,6 @@ public class SamaraUniversityParser implements Parser {
                     .referrer(referrer)
                     .get();
 
-            String responseBody = evenDoc
-                    .body()
-                    .html();  // Получаем HTML тела ответа
-            log.info("Response body: {}",
-                    responseBody
-            );
-
             Document oddDoc = Jsoup
                     .connect(oddUrl)
                     .userAgent(userAgent)
