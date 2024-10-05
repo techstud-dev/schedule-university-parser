@@ -98,7 +98,6 @@ public class MappingServiceImpl implements MappingService {
                 previous = current;
             }
             if (previous != null) {
-                // Добавляем 1 час 45 минут к времени начала последнего TimeSheet
                 previous.setTo(previous.getFrom().plusHours(1).plusMinutes(45));
             }
 
