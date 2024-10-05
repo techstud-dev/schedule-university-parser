@@ -14,7 +14,6 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
 public class ScheduleDay {
 
     private Date date;

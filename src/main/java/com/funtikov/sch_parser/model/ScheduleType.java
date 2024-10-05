@@ -2,8 +2,10 @@ package com.funtikov.sch_parser.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
+@NoArgsConstructor(force = true)
 @Getter
 public enum ScheduleType {
 
@@ -14,5 +16,16 @@ public enum ScheduleType {
     CONSULTATION("Консультация"),
     UNKNOWN("Другое");
 
-    private final String name;
+    private final String ruName;
+
+    public static ScheduleType returnTypeByRuName(String ruName) {
+        return switch (ruName) {
+            case "Лекция" -> ScheduleType.LECTURE;
+            case "Практика" -> ScheduleType.PRACTICE;
+            case "Лабораторная работа" -> ScheduleType.LAB;
+            case "Экзамен/зачет" -> ScheduleType.EXAM;
+            case "Консультация" -> ScheduleType.CONSULTATION;
+            default -> ScheduleType.UNKNOWN;
+        };
+    }
 }

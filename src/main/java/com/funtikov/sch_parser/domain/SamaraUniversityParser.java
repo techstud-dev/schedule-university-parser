@@ -14,9 +14,13 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.*;
 
+import static com.funtikov.sch_parser.model.ScheduleType.returnTypeByRuName;
+
 @Component
 @Slf4j
 public class SamaraUniversityParser implements Parser {
+
+    private static ScheduleType scheduleType;
 
     @Override
     public Schedule parseSchedule(Long groupId) throws IOException {
@@ -28,7 +32,6 @@ public class SamaraUniversityParser implements Parser {
         final String oddUrl = MessageFormat.format(samaraUniversityScheduleUrl, oddParameters[0], oddParameters[1]);
 
         try {
-
             Document evenDoc = Jsoup
                     .connect(evenUrl)
                     .userAgent(userAgent)
@@ -131,8 +134,10 @@ public class SamaraUniversityParser implements Parser {
         scheduleObject.setName(lessonName);
         scheduleObject.setPlace(lessonPlace);
         scheduleObject.setTeacher(lessonTeacher);
+
+        ScheduleType inputType = returnTypeByRuName(lessonType.trim());
         try {
-            scheduleObject.setType(ScheduleType.valueOf(lessonType));
+            scheduleObject.setType(inputType);
         } catch (IllegalArgumentException e) {
             log.error("Illegal lesson type = {}", lessonType, e);
         }
