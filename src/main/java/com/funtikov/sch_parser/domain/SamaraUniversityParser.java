@@ -20,8 +20,6 @@ import static com.funtikov.sch_parser.model.ScheduleType.returnTypeByRuName;
 @Slf4j
 public class SamaraUniversityParser implements Parser {
 
-    private static ScheduleType scheduleType;
-
     @Override
     public Schedule parseSchedule(Long groupId) throws IOException {
 
@@ -37,6 +35,13 @@ public class SamaraUniversityParser implements Parser {
                     .userAgent(userAgent)
                     .referrer(referrer)
                     .get();
+
+            String responseBody = evenDoc
+                    .body()
+                    .html();  // Получаем HTML тела ответа
+            log.info("Response body: {}",
+                    responseBody
+            );
 
             Document oddDoc = Jsoup
                     .connect(oddUrl)
@@ -58,7 +63,7 @@ public class SamaraUniversityParser implements Parser {
     private Map<Integer, Map<DayOfWeek, ScheduleDay>> getSchedules(Document evenDoc, Document oddDoc) {
         Map<Integer, Map<DayOfWeek, ScheduleDay>> scheduleDayMap = new LinkedHashMap<>();
         Element evenElement = evenDoc.getElementsByClass("schedule").first();
-        Element oddElement = evenDoc.getElementsByClass("schedule").first();
+        Element oddElement = oddDoc.getElementsByClass("schedule").first();
         scheduleDayMap.put(1, new HashMap<>());
         scheduleDayMap.put(2, new HashMap<>());
 
@@ -135,9 +140,8 @@ public class SamaraUniversityParser implements Parser {
         scheduleObject.setPlace(lessonPlace);
         scheduleObject.setTeacher(lessonTeacher);
 
-        ScheduleType inputType = returnTypeByRuName(lessonType.trim());
         try {
-            scheduleObject.setType(inputType);
+            scheduleObject.setType(returnTypeByRuName(lessonType.trim()));
         } catch (IllegalArgumentException e) {
             log.error("Illegal lesson type = {}", lessonType, e);
         }
