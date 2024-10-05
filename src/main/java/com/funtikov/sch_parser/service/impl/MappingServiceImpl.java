@@ -25,8 +25,8 @@ public class MappingServiceImpl implements MappingService {
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = createWeekScheduleWithoutLessons(evenWeekSseuSchedule);
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = createWeekScheduleWithoutLessons(oddWeekSseuSchedule);
 
-        fillSchedule(evenWeekSseuSchedule, evenWeekSchedule);
-        fillSchedule(oddWeekSseuSchedule, oddWeekSchedule);
+        evenWeekSchedule = fillSchedule(evenWeekSseuSchedule, evenWeekSchedule);
+        oddWeekSchedule = fillSchedule(oddWeekSseuSchedule, oddWeekSchedule);
 
         schedule.setSnapshotDate(new Date());
         schedule.setEvenWeekSchedule(evenWeekSchedule);
@@ -62,7 +62,7 @@ public class MappingServiceImpl implements MappingService {
         return Date.from(instant);
     }
 
-    private void fillSchedule(SseuApiResponse sseuSchedule, Map<DayOfWeek, ScheduleDay> weekSchedule) {
+    private Map<DayOfWeek, ScheduleDay> fillSchedule(SseuApiResponse sseuSchedule, Map<DayOfWeek, ScheduleDay> weekSchedule) {
         for (int i = 0; i < sseuSchedule.getBody().size(); i++) {
             LocalTime from = LocalTime.parse(sseuSchedule.getBody().get(i).getName());
 
@@ -83,6 +83,32 @@ public class MappingServiceImpl implements MappingService {
                 }
             });
         }
+        Map<DayOfWeek, ScheduleDay> result = new LinkedHashMap<>();
+        weekSchedule.forEach((day, scheduleDay) -> {
+            Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
+            List<TimeSheet> sortedTimeSheets = new ArrayList<>(scheduleDay.getLessons().keySet());
+            sortedTimeSheets.sort(Comparator.comparing(TimeSheet::getFrom));
+
+            TimeSheet previous = null;
+            for (TimeSheet current : sortedTimeSheets) {
+                if (previous != null) {
+                    previous.setTo(current.getFrom());
+                }
+                lessons.put(current, scheduleDay.getLessons().get(current));
+                previous = current;
+            }
+            if (previous != null) {
+                // Добавляем 1 час 45 минут к времени начала последнего TimeSheet
+                previous.setTo(previous.getFrom().plusHours(1).plusMinutes(45));
+            }
+
+            ScheduleDay newScheduleDay = new ScheduleDay();
+            newScheduleDay.setDate(scheduleDay.getDate());
+            newScheduleDay.setLessons(lessons);
+            result.put(day, newScheduleDay);
+        });
+
+        return result;
     }
 
     private ScheduleObject mapSseuLessonToScheduleObject(List<SseuLessonDay> daySchedule) {
@@ -135,6 +161,7 @@ public class MappingServiceImpl implements MappingService {
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
                 "Лекции", ScheduleType.LECTURE,
                 "Практические", ScheduleType.PRACTICE,
+                "Лабораторные", ScheduleType.LAB,
                 "Пересдача Зачет", ScheduleType.EXAM,
                 "Пересдача Экзамен", ScheduleType.EXAM);
         return scheduleTypeMap.get(lessonType);
