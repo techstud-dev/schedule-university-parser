@@ -1,6 +1,7 @@
 package com.techstud.sch_parser.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techstud.sch_parser.annotation.Profiling;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
 import com.techstud.sch_parser.service.MappingService;
@@ -27,6 +28,7 @@ public class SseuParser implements Parser {
     private final MappingService mappingService;
 
     @Override
+    @Profiling
     public Schedule parseSchedule(Long groupId) throws Exception {
 
         LocalDate currentDate = LocalDate.now();
