@@ -39,50 +39,21 @@ services:
     volumes:
       - ./src/test/resources/:/etc/kafka/secrets/
 
-  akhq:
-    image: tchiotludo/akhq
-    container_name: akhq
-    depends_on:
-      - kafka
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:v0.7.2
     ports:
-      - "9000:8080"
+      - 8082:8080
     environment:
-      AKHQ_CONFIGURATION: |
-        akhq:
-          connections:
-            kafka-cluster:
-              properties:
-                bootstrap.servers: "kafka:9093"
-                security.protocol: SSL
-                ssl.truststore.location: /etc/kafka/secrets/kafka.client.truststore.jks
-                ssl.truststore.password: password
-                ssl.keystore.location: /etc/kafka/secrets/kafka.client.keystore.jks
-                ssl.keystore.password: password
-                ssl.key.password: password
-                ssl.endpoint.identification.algorithm: ""
-          security:
-            default-group: admin
-            basicAuth:
-              - username: "admin"
-                password: "admin123"
-                groups:
-                  - admin
-            groups:
-              admin:
-                roles:
-                  - '*'
-        micronaut:
-          security:
-            enabled: true
-            authentication: basic
-            basic-auth:
-              enabled: true
-            endpoints:
-              login:
-                enabled: false
-            token:
-              enabled: false
-              jwt:
-                enabled: false
+      DYNAMIC_CONFIG_ENABLED: true
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: password
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.client.keystore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: password
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: password
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
     volumes:
       - ./src/test/resources/:/etc/kafka/secrets/
