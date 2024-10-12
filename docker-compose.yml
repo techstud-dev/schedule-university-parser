@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9093"
+      - "9094:9094"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: INSIDE_SSL://kafka:9093,OUTSIDE_SSL://localhost:9094
+      KAFKA_LISTENERS: INSIDE_SSL://0.0.0.0:9093,OUTSIDE_SSL://0.0.0.0:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE_SSL:SSL,OUTSIDE_SSL:SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE_SSL
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.client.keystore.jks
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.client.keystore.jks
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.client.truststore.jks
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_SSL_KEY_CREDENTIALS: sslkey_creds
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: sslkeystore_creds
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: ssltruststore_creds
+      KAFKA_ZOOKEEPER_SASL_ENABLED: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    volumes:
+      - ./src/test/resources/kafka/:/etc/kafka/secrets/
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:v0.7.2
+    ports:
+      - 8082:8080
+    environment:
+      DYNAMIC_CONFIG_ENABLED: true
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: password
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.client.keystore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: password
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: password
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+    volumes:
+      - ./src/test/resources/kafka/:/etc/kafka/secrets/
+
+  redis:
+    image: redis:7.4.1
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./src/test/resources/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "--requirepass", "password", "--appendonly", "yes" ]
