@@ -22,7 +22,7 @@ public enum ScheduleType {
         return switch (ruName) {
             case "Лекция" -> ScheduleType.LECTURE;
             case "Практика" -> ScheduleType.PRACTICE;
-            case "Лабораторная работа" -> ScheduleType.LAB;
+            case "Лабораторная работа", "Лабораторная" -> ScheduleType.LAB;
             case "Экзамен/зачет" -> ScheduleType.EXAM;
             case "Консультация" -> ScheduleType.CONSULTATION;
             default -> ScheduleType.UNKNOWN;
