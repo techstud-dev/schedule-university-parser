@@ -33,8 +33,8 @@ public class SamaraUniversityParser implements Parser {
         final String[] oddParameters = {String.valueOf(groupId), "1"};
         log.info(Arrays.toString(oddParameters));
 
-        //String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId={0}&selectedWeek={1}";
-        String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId=531075164L&selectedWeek=8&selectedWeekday=1";
+        String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId={0}&selectedWeek={1}";
+        //String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId=531075164L&selectedWeek=8&selectedWeekday=1";
 
         final String evenUrl = MessageFormat.format(
                 samaraUniversityScheduleUrl,
