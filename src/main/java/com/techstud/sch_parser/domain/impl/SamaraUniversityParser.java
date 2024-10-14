@@ -33,7 +33,8 @@ public class SamaraUniversityParser implements Parser {
         final String[] oddParameters = {String.valueOf(groupId), "1"};
         log.info(Arrays.toString(oddParameters));
 
-        String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId={0}&selectedWeek={1}";
+        //String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId={0}&selectedWeek={1}";
+        String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId=531075164L&selectedWeek=8&selectedWeekday=1";
 
         final String evenUrl = MessageFormat.format(
                 samaraUniversityScheduleUrl,
@@ -229,7 +230,6 @@ public class SamaraUniversityParser implements Parser {
     }
 
     private List<ScheduleObject> getScheduleInfo(Element scheduleElement) {
-
         // Переделал getElementByClass в селекторы ( .select() ) для большей читаемости, производительности и гибкости
         String lessonType = scheduleElement
                 .select(".schedule__lesson-type-chip")
@@ -247,9 +247,12 @@ public class SamaraUniversityParser implements Parser {
                 .select(".schedule__teacher")
                 .text();
 
-        List<String> lessonGroups = Collections.singletonList(scheduleElement
-                .select(".schedule__groups")
-                .text());
+        List<String> lessonGroups = Arrays.stream(scheduleElement
+                        .select(".schedule__groups")
+                        .text()
+                        .split("\\s+")) // Разбиваем строку по пробелам
+                .map(String::trim)
+                .collect(Collectors.toList());
 
         ScheduleObject scheduleObject = new ScheduleObject();
 

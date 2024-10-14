@@ -1,6 +1,7 @@
 package com.techstud.sch_parser.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techstud.sch_parser.annotation.Profiling;
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
