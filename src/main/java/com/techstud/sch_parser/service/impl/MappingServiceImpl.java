@@ -6,12 +6,17 @@ import com.techstud.sch_parser.model.api.response.sseu.SseuLessonDay;
 import com.techstud.sch_parser.model.api.response.sseu.SseuSubject;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
+
+import static javax.swing.UIManager.get;
 
 @Service
 @Slf4j
@@ -32,6 +37,90 @@ public class MappingServiceImpl implements MappingService {
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
         return schedule;
+    }
+
+    @Override
+    public Schedule mapSsauToSchedule(List<Document> documents) {
+        Element evenElement = documents.get(0)
+                .getElementsByClass("schedule")
+                .first();
+
+        Element oddElement = documents.get(1)
+                .getElementsByClass("schedule")
+                .first();
+
+        Map<DayOfWeek, ScheduleDay> evenSchedule = getSsauSchedule(evenElement);
+        Map<DayOfWeek, ScheduleDay> oddSchedule = getSsauSchedule(oddElement);
+        Schedule schedule = new Schedule();
+        schedule.setEvenWeekSchedule(evenSchedule);
+        schedule.setOddWeekSchedule(oddSchedule);
+        schedule.setSnapshotDate(new Date());
+        return schedule;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
+        Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
+        for (DayOfWeek day : DayOfWeek.values()) {
+            scheduleDayMap.put(day, getSchduleDay(day, scheduleElement));
+        }
+        return scheduleDayMap;
+    }
+
+    private ScheduleDay getSchduleDay(DayOfWeek dayOfWeek, Element element) {
+        Elements scheduleItemElements = element.getElementsByClass("schedule__item");
+        List<Element> ssauTimeSheets = element.getElementsByClass("schedule__time");
+        List<Element> ssauDayOfWeek = scheduleItemElements.subList(1, 7);
+        List<Element> ssauLessons = scheduleItemElements.subList(7, scheduleItemElements.size());
+        ScheduleDay scheduleDay = new ScheduleDay();
+        Map<TimeSheet, List<ScheduleObject>> timeSheetListMap = new LinkedHashMap<>();
+        for (int i = 0; i < ssauTimeSheets.size(); i++) {
+            if (dayOfWeek.equals(DayOfWeek.SUNDAY)) {
+                timeSheetListMap.put(new TimeSheet(ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(0).text(),
+                        ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(1).text()), new ArrayList<>());
+                continue;
+            }
+            int currentElement = (i * ssauDayOfWeek.size() + dayOfWeek.getValue() - 1);
+            try {
+                timeSheetListMap.put(new TimeSheet(ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(0).text(),
+                        ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(1).text()), getSsauScheduleObject(ssauLessons.get(currentElement)));
+            } catch (IndexOutOfBoundsException e) {
+                break;
+            }
+        }
+        scheduleDay.setDate(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
+        scheduleDay.setLessons(timeSheetListMap);
+        return scheduleDay;
+    }
+
+    public List<ScheduleObject> getSsauScheduleObject(Element element) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
+        List<Element> scheduleLessons = element.getElementsByClass("schedule__lesson");
+            for (Element scheduleLesson : scheduleLessons) {
+                ScheduleObject scheduleObject = new ScheduleObject();
+                scheduleObject.setType(ScheduleType.returnTypeByRuName(scheduleLesson.getElementsByClass("schedule__lesson-type-chip").text()));
+                scheduleObject.setName(scheduleLesson.getElementsByClass("schedule__discipline").text());
+                scheduleObject.setPlace(scheduleLesson.getElementsByClass("schedule__place").text());
+                scheduleObject.setTeacher(scheduleLesson.getElementsByClass("schedule__teacher").text());
+                scheduleObject.setGroups(getSsauScheduleGroups(scheduleLesson.getElementsByClass("schedule__groups")));
+                scheduleObjects.add(scheduleObject);
+        }
+        return scheduleObjects;
+    }
+
+    private List<String> getSsauScheduleGroups(Elements schduleGroupsElement) {
+        List<String> groupNames = new ArrayList<>();
+        List<Element> aElements = schduleGroupsElement.get(0).getElementsByTag("a");
+        List<Element> spanElements = schduleGroupsElement.get(0).getElementsByTag("span");
+        if (aElements.isEmpty()) {
+            for (Element spanElement : spanElements) {
+                groupNames.add(spanElement.text());
+            }
+        } else {
+            for (Element aElement : aElements) {
+                groupNames.add(aElement.text());
+            }
+        }
+        return groupNames;
     }
 
     private Map<DayOfWeek, ScheduleDay> createWeekScheduleWithoutLessons(SseuApiResponse sseuSchedule) {
