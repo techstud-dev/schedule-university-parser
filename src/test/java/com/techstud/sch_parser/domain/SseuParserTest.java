@@ -1,5 +1,6 @@
 package com.techstud.sch_parser.domain;
 
+import com.techstud.sch_parser.domain.impl.SseuParser;
 import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import org.apache.http.impl.client.CloseableHttpClient;
