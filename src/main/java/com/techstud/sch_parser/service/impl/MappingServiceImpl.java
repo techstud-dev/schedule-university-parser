@@ -75,7 +75,9 @@ public class MappingServiceImpl implements MappingService {
         Map<TimeSheet, List<ScheduleObject>> timeSheetListMap = new LinkedHashMap<>();
         for (int i = 0; i < ssauTimeSheets.size(); i++) {
             if (dayOfWeek.equals(DayOfWeek.SUNDAY)) {
-                break;
+                timeSheetListMap.put(new TimeSheet(ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(0).text(),
+                        ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(1).text()), new ArrayList<>());
+                continue;
             }
             int currentElement = (i * ssauDayOfWeek.size() + dayOfWeek.getValue() - 1);
             try {
