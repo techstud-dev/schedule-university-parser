@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 
 @Data
 @AllArgsConstructor
@@ -14,5 +15,10 @@ public class TimeSheet {
     private LocalTime from;
 
     private LocalTime to;
+
+    public TimeSheet(String from, String to) {
+        this.from = LocalTime.parse(from);
+        this.to = LocalTime.parse(to);
+    }
 
 }

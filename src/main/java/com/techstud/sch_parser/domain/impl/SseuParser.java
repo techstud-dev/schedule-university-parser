@@ -1,4 +1,4 @@
-package com.techstud.sch_parser.domain;
+package com.techstud.sch_parser.domain.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techstud.sch_parser.annotation.Profiling;
