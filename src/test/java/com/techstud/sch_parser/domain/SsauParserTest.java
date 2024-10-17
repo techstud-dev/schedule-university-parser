@@ -4,14 +4,13 @@ import com.techstud.sch_parser.domain.impl.SsauParser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
+import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import lombok.extern.log4j.*;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 
 @Log4j2
 public class SsauParserTest {
@@ -49,6 +48,4 @@ public class SsauParserTest {
         log.info(result);
         assertThat(result).isNotNull();
     }
-
-
 }
