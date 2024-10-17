@@ -16,8 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 
-import static javax.swing.UIManager.get;
-
 @Service
 @Slf4j
 public class MappingServiceImpl implements MappingService {
@@ -95,14 +93,14 @@ public class MappingServiceImpl implements MappingService {
     public List<ScheduleObject> getSsauScheduleObject(Element element) {
         List<ScheduleObject> scheduleObjects = new ArrayList<>();
         List<Element> scheduleLessons = element.getElementsByClass("schedule__lesson");
-            for (Element scheduleLesson : scheduleLessons) {
-                ScheduleObject scheduleObject = new ScheduleObject();
-                scheduleObject.setType(ScheduleType.returnTypeByRuName(scheduleLesson.getElementsByClass("schedule__lesson-type-chip").text()));
-                scheduleObject.setName(scheduleLesson.getElementsByClass("schedule__discipline").text());
-                scheduleObject.setPlace(scheduleLesson.getElementsByClass("schedule__place").text());
-                scheduleObject.setTeacher(scheduleLesson.getElementsByClass("schedule__teacher").text());
-                scheduleObject.setGroups(getSsauScheduleGroups(scheduleLesson.getElementsByClass("schedule__groups")));
-                scheduleObjects.add(scheduleObject);
+        for (Element scheduleLesson : scheduleLessons) {
+            ScheduleObject scheduleObject = new ScheduleObject();
+            scheduleObject.setType(ScheduleType.returnTypeByRuName(scheduleLesson.getElementsByClass("schedule__lesson-type-chip").text()));
+            scheduleObject.setName(scheduleLesson.getElementsByClass("schedule__discipline").text());
+            scheduleObject.setPlace(scheduleLesson.getElementsByClass("schedule__place").text());
+            scheduleObject.setTeacher(scheduleLesson.getElementsByClass("schedule__teacher").text());
+            scheduleObject.setGroups(getSsauScheduleGroups(scheduleLesson.getElementsByClass("schedule__groups")));
+            scheduleObjects.add(scheduleObject);
         }
         return scheduleObjects;
     }
@@ -168,7 +166,10 @@ public class MappingServiceImpl implements MappingService {
                         lessons.put(timeSheet, new ArrayList<>());
                     }
                     List<ScheduleObject> scheduleObjects = lessons.get(timeSheet);
-                    scheduleObjects.add(mapSseuLessonToScheduleObject(sseuSchedule.getBody().get(finalI).getDaySchedule().get(day)));
+                    ScheduleObject addedScheduleObject = mapSseuLessonToScheduleObject(sseuSchedule.getBody().get(finalI).getDaySchedule().get(day));
+                    if (addedScheduleObject.getName() != null && addedScheduleObject.getType() != null && addedScheduleObject.getPlace() != null) {
+                        scheduleObjects.add(addedScheduleObject);
+                    }
                 }
             });
         }
@@ -196,14 +197,25 @@ public class MappingServiceImpl implements MappingService {
             result.put(day, newScheduleDay);
         });
 
+        if (!result.containsKey(DayOfWeek.SUNDAY)) {
+            Map<TimeSheet, List<ScheduleObject>> scheduleTimeSheetMap = result.get(DayOfWeek.SATURDAY).getLessons();
+            scheduleTimeSheetMap.replaceAll((key, value) -> new ArrayList<>());
+            ScheduleDay sunDayScheduleDay = new ScheduleDay();
+            Date saturdayDate = result.get(DayOfWeek.SATURDAY).getDate();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(saturdayDate);
+            calendar.add(Calendar.HOUR_OF_DAY, 24);
+            sunDayScheduleDay.setDate(calendar.getTime());
+            sunDayScheduleDay.setLessons(scheduleTimeSheetMap);
+            result.put(DayOfWeek.SUNDAY, sunDayScheduleDay);
+        }
         return result;
     }
 
     private ScheduleObject mapSseuLessonToScheduleObject(List<SseuLessonDay> daySchedule) {
         ScheduleObject scheduleObject = new ScheduleObject();
         if (daySchedule == null || daySchedule.isEmpty()) {
-            // Handle the case when daySchedule is empty
-            return null; // or return an empty ScheduleObject, depending on your requirements
+            return null;
         }
 
         SseuLessonDay lessonDay = daySchedule.get(0);
@@ -234,7 +246,6 @@ public class MappingServiceImpl implements MappingService {
                 scheduleObject.getGroups().add(groupName);
             }
         }
-
         return scheduleObject;
     }
 
