@@ -13,15 +13,20 @@ public class HttpClientConfiguration {
 
     @Value("${http.client.connection-timeout}")
     private String connectionTimeOut;
+
     @Value("${http.client.socket-timeout}")
     private String socketTimeOut;
+
     @Value("${http.client.request-timeout}")
     private String requestTimeout;
+
     @Value("${http.client.proxy.enabled}")
     private boolean proxyEnabled;
+
     @Value("${http.client.proxy.host}")
     private String proxyHost;
-    @Value("${http.client.proxy}")
+
+    @Value("${http.client.proxy.port}")
     private String proxyPort;
 
     @Bean
