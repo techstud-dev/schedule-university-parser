@@ -15,6 +15,10 @@ services:
     ports:
       - "9093:9093"
       - "9094:9094"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "9093" ]
+      interval: 10s
+      retries: 5
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -41,6 +45,9 @@ services:
   kafka-ui:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui:v0.7.2
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
       - 8082:8080
     environment:
@@ -55,6 +62,7 @@ services:
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: password
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
     volumes:
+      - ./wait-for-it.sh:/wait-for-it.sh
       - ./src/test/resources/kafka/:/etc/kafka/secrets/
 
   redis:
