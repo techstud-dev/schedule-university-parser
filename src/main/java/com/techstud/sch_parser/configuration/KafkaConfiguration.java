@@ -23,16 +23,16 @@ public class KafkaConfiguration {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Value("${server.ssl.trust-store}")
+    @Value("${spring.kafka.ssl.trust-store-location}")
     private String trustStoreLocation;
 
-    @Value("${server.ssl.trust-store-password}")
+    @Value("${spring.kafka.ssl.trust-store-password}")
     private String trustStorePassword;
 
-    @Value("${server.ssl.key-store}")
+    @Value("${spring.kafka.ssl.key-store-location}")
     private String keyStoreLocation;
 
-    @Value("${server.ssl.key-store-password}")
+    @Value("${spring.kafka.ssl.key-store-password}")
     private String keyStorePassword;
 
     @Value("${spring.kafka.ssl.key-password}")
