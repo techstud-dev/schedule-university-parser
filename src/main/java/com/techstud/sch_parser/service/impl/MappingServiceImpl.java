@@ -59,12 +59,12 @@ public class MappingServiceImpl implements MappingService {
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
         for (DayOfWeek day : DayOfWeek.values()) {
-            scheduleDayMap.put(day, getSchduleDay(day, scheduleElement));
+            scheduleDayMap.put(day, getScheduleDay(day, scheduleElement));
         }
         return scheduleDayMap;
     }
 
-    private ScheduleDay getSchduleDay(DayOfWeek dayOfWeek, Element element) {
+    private ScheduleDay getScheduleDay(DayOfWeek dayOfWeek, Element element) {
         Elements scheduleItemElements = element.getElementsByClass("schedule__item");
         List<Element> ssauTimeSheets = element.getElementsByClass("schedule__time");
         List<Element> ssauDayOfWeek = scheduleItemElements.subList(1, 7);
