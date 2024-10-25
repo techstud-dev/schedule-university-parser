@@ -4,11 +4,7 @@ import com.techstud.sch_parser.kafka.KafkaConsumer;
 import com.techstud.sch_parser.kafka.KafkaProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.HttpStatusException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -39,7 +35,7 @@ public class GlobalExceptionHandler {
         response.put("messageId", KafkaConsumer.getCurrentMessageId());
         response.put("message", exception.getMessage());
         log.error(exception.getMessage(), exception);
-        kafkaProducer.sendCompleteToKafka(KafkaConsumer.getCurrentMessageId(), errorKafkaTopic, response);
+        kafkaProducer.sendToKafka(KafkaConsumer.getCurrentMessageId(), errorKafkaTopic, response);
     }
 
 }
