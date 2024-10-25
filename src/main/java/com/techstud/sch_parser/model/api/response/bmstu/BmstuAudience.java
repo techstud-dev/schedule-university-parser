@@ -1,0 +1,14 @@
+package com.techstud.sch_parser.model.api.response.bmstu;
+
+import lombok.Getter;
+
+import java.io.Serializable;
+
+@Getter
+public class BmstuAudience implements Serializable {
+
+    private String uuid;
+    private String name;
+    private String location;
+
+}

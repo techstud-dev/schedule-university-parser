@@ -22,6 +22,6 @@ public class SseuParserTest {
     @Test
     public void parseScheduleTest() throws Exception {
         Parser parser = new SseuParser(closeableHttpClient, mappingService);
-        System.out.println(parser.parseSchedule(804L));
+        System.out.println(parser.parseSchedule("804"));
     }
 }

@@ -1,6 +1,9 @@
 package com.techstud.sch_parser.service.impl;
 
 import com.techstud.sch_parser.model.*;
+import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
+import com.techstud.sch_parser.model.api.response.bmstu.BmstuScheduleItem;
+import com.techstud.sch_parser.model.api.response.bmstu.BmstuTeacher;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
 import com.techstud.sch_parser.model.api.response.sseu.SseuLessonDay;
 import com.techstud.sch_parser.model.api.response.sseu.SseuSubject;
@@ -15,6 +18,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -55,6 +59,96 @@ public class MappingServiceImpl implements MappingService {
         schedule.setSnapshotDate(new Date());
         return schedule;
     }
+
+    @Override
+    public Schedule mapBmstuToSchedule(BmstuApiResponse bmstuApiResponse) {
+        Schedule schedule = new Schedule();
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
+
+        for (BmstuScheduleItem scheduleItem : bmstuApiResponse.getData().getSchedule()) {
+            DayOfWeek dayOfWeek = DayOfWeek.of(scheduleItem.getDay());
+
+            switch (scheduleItem.getWeek()) {
+                case "all":
+                    addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
+                    addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
+                    break;
+                case "ch":
+                    addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
+                    break;
+                case "zn":
+                    addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        schedule.setEvenWeekSchedule(evenWeekSchedule);
+        schedule.setOddWeekSchedule(oddWeekSchedule);
+        return schedule;
+    }
+
+    private void addToSchedule(Map<DayOfWeek, ScheduleDay> weekSchedule, DayOfWeek dayOfWeek, BmstuScheduleItem scheduleItem) {
+        ScheduleDay scheduleDay = weekSchedule.computeIfAbsent(dayOfWeek, k -> new ScheduleDay());
+        addScheduleItemToDay(scheduleDay, scheduleItem);
+    }
+
+    private void addScheduleItemToDay(ScheduleDay scheduleDay, BmstuScheduleItem scheduleItem) {
+        TimeSheet timeSheet = new TimeSheet(scheduleItem.getStartTime(), scheduleItem.getEndTime());
+        ScheduleObject scheduleObject = createScheduleObject(scheduleItem);
+
+        Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
+        if (lessons == null) {
+            lessons = new LinkedHashMap<>();
+            scheduleDay.setLessons(lessons);
+        }
+
+        List<ScheduleObject> scheduleObjects = lessons.computeIfAbsent(timeSheet, k -> new ArrayList<>());
+        scheduleObjects.add(scheduleObject);
+    }
+
+    private ScheduleObject createScheduleObject(BmstuScheduleItem scheduleItem) {
+        ScheduleObject scheduleObject = new ScheduleObject();
+        scheduleObject.setName(scheduleItem.getDiscipline().getFullName());
+
+        List<String> groups = Arrays.stream(scheduleItem.getStream().split(";"))
+                .map(String::trim)
+                .collect(Collectors.toList());
+        scheduleObject.setGroups(groups);
+
+        if (!scheduleItem.getAudiences().isEmpty()) {
+            scheduleObject.setPlace(scheduleItem.getAudiences().get(0).getName());
+        }
+
+        if (!scheduleItem.getTeachers().isEmpty()) {
+            BmstuTeacher teacher = scheduleItem.getTeachers().get(0);
+            scheduleObject.setTeacher(String.format("%s %s %s",
+                    teacher.getLastName(),
+                    teacher.getFirstName(),
+                    teacher.getMiddleName()).trim());
+        }
+
+        scheduleObject.setType(scheduleTypeByBmstuType(scheduleItem.getDiscipline().getActType()));
+        return scheduleObject;
+    }
+
+    private ScheduleType scheduleTypeByBmstuType(String bmstuType) {
+        if (bmstuType == null) {
+            return ScheduleType.UNKNOWN;
+        }
+
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "lecture", ScheduleType.LECTURE,
+                "seminar", ScheduleType.PRACTICE,
+                "lab", ScheduleType.LAB,
+                "pk", ScheduleType.UNKNOWN
+        );
+
+        return scheduleTypeMap.getOrDefault(bmstuType, ScheduleType.UNKNOWN);
+    }
+
 
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
