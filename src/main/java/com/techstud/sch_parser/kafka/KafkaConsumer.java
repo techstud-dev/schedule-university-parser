@@ -12,12 +12,22 @@ public class KafkaConsumer {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+
+    public static final ThreadLocal<String> messageIdHolder = new ThreadLocal<>();
+
+
     @KafkaListener(topics = "#{'${kafka.topic.parsing-queue}'}", concurrency = "${spring.kafka.listener.concurrency}",
             autoStartup = "true", groupId = "parser_group")
     public void listen(ConsumerRecord<String, String> consumerRecord) {
         final String id = consumerRecord.key();
         final String parseTaskAsString = consumerRecord.value();
+        messageIdHolder.set(id);
         log.info("Received message  key: {}, value {}", id, parseTaskAsString);
         //TODO: После утверждения схемы сообщения реализовать логику
     }
+
+    public static String getCurrentMessageId() {
+        return messageIdHolder.get();
+    }
+
 }

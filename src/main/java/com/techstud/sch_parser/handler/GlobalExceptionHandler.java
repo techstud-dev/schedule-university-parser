@@ -1,5 +1,8 @@
 package com.techstud.sch_parser.handler;
 
+import com.techstud.sch_parser.kafka.KafkaConsumer;
+import com.techstud.sch_parser.kafka.KafkaProducer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.HttpStatusException;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +17,7 @@ import java.util.Map;
 
 @ControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
     @Value("${spring.application.name}")
@@ -21,26 +25,21 @@ public class GlobalExceptionHandler {
 
     @Value("${spring.application.systemName}")
     private String systemName;
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleException(Exception exception, HttpRequest request) {
-        Map<String, String> response = new LinkedHashMap<>();
-        response.put("systemName", systemName);
-        response.put("serviceName", applicationName);
-        response.put("message", exception.getMessage());
-        response.put("callId", request.getHeaders().getFirst("callId"));
-        log.error(exception.getMessage(), exception);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
 
-    @ExceptionHandler(HttpStatusException.class)
-    public ResponseEntity<Map<String, String>> handleHttpStatusException(HttpStatusException exception, HttpRequest request) {
+    @Value("${kafka.topic.parsing-failure}")
+    private String errorKafkaTopic;
+
+    private final KafkaProducer kafkaProducer;
+
+    @ExceptionHandler(Exception.class)
+    public void handleException(Exception exception) {
         Map<String, String> response = new LinkedHashMap<>();
         response.put("systemName", systemName);
         response.put("serviceName", applicationName);
+        response.put("messageId", KafkaConsumer.getCurrentMessageId());
         response.put("message", exception.getMessage());
-        response.put("callId", request.getHeaders().getFirst("callId"));
         log.error(exception.getMessage(), exception);
-        return ResponseEntity.status(exception.getStatusCode()).body(response);
+        kafkaProducer.sendCompleteToKafka(KafkaConsumer.getCurrentMessageId(), errorKafkaTopic, response);
     }
 
 }
