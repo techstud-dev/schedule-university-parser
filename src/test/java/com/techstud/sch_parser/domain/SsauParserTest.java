@@ -26,7 +26,7 @@ public class SsauParserTest {
     public void checkReturnCorrectTimetableMastersEighteenHoursEven() throws Exception {
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
-                underTest.parseSchedule(531075164L));
+                underTest.parseSchedule("531075164"));
         log.info(result);
         assertThat(result).isNotEmpty();
     }
@@ -35,7 +35,7 @@ public class SsauParserTest {
     public void checkReturnCorrectTimetableBachelorEighteenHours() throws Exception {
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
-                underTest.parseSchedule(1274100747L));
+                underTest.parseSchedule("1274100747"));
         log.info(result);
         assertThat(result).isNotNull();
     }
@@ -44,7 +44,7 @@ public class SsauParserTest {
     public void checkReturnCorrectTimetableBachelorEighteenAndEleventhHoursEven() throws Exception {
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
-                underTest.parseSchedule(531052818L));
+                underTest.parseSchedule("531052818"));
         log.info(result);
         assertThat(result).isNotNull();
     }

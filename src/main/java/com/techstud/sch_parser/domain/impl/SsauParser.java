@@ -24,7 +24,7 @@ public class SsauParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(Long groupId) throws IOException {
+    public Schedule parseSchedule(String groupId) throws IOException {
         String[] parseWeeks = getCurrentWeekNumbers(TimeZone.getTimeZone("Europe/Samara"));
         final String[] evenParameters = {String.valueOf(groupId), parseWeeks[0]};
         final String[] oddParameters = {String.valueOf(groupId), parseWeeks[1]};
