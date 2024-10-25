@@ -16,9 +16,107 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 
+import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.parseDayOfWeek;
+
 @Service
 @Slf4j
 public class MappingServiceImpl implements MappingService {
+
+    @Override
+    public Schedule mapMephiToSchedule(List<Document> documents) {
+        if (documents.size() < 2) {
+            throw new IllegalArgumentException("Not enough elements for even and odd documents");
+        }
+
+        Document evenWeekDocument = documents.get(0);
+        Document oddWeekDocument = documents.get(1);
+
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = getMephiWeekSchedule(evenWeekDocument);
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = getMephiWeekSchedule(oddWeekDocument);
+
+        Schedule schedule = new Schedule();
+        schedule.setEvenWeekSchedule(evenWeekSchedule);
+        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setSnapshotDate(new Date());
+
+        return schedule;
+    }
+
+    private ScheduleDay getMephiScheduleDay(Element element) {
+        List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
+        log.debug("Processing list-group, found {} group items", groupList.size());
+
+        ScheduleDay scheduleDay = new ScheduleDay();
+        Map<TimeSheet, List<ScheduleObject>> scheduleDayMap = new LinkedHashMap<>();
+
+        for (Element groupElement : groupList) {
+            Elements timeElements = groupElement.select(".lesson-time");
+
+            String timeRange = timeElements.first().text();
+            TimeSheet timeSheet = parseTimeSheet(timeRange);
+
+            List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
+            scheduleDayMap.put(timeSheet, scheduleObjects);
+        }
+
+        log.debug("Finished processing list-group, resulting scheduleDayMap: {}", scheduleDayMap);
+        scheduleDay.setLessons(scheduleDayMap);
+        return scheduleDay;
+    }
+
+    private List<ScheduleObject> getMephiScheduleObjects(Element element) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
+
+        Elements lessonElements = element.select(".lesson-lessons > .lesson");
+
+        for (Element lessonElement : lessonElements) {
+            ScheduleObject scheduleObject = new ScheduleObject();
+
+            String lessonName = lessonElement.ownText().trim();
+            String teacher = lessonElement.select("a.text-nowrap").text();
+            String type = lessonElement.select(".label-lesson").text();
+
+            scheduleObject.setName(lessonName);
+            scheduleObject.setTeacher(teacher);
+            scheduleObject.setType(mapMephiLessonTypeToScheduleType(type));
+
+            scheduleObjects.add(scheduleObject);
+        }
+
+        log.debug("Extracted schedule objects: {}", scheduleObjects);
+        return scheduleObjects;
+    }
+
+    private TimeSheet parseTimeSheet(String timeRange) {
+        String[] times = timeRange.split("—");
+        if (times.length == 2) {
+            String fromTime = times[0].trim();
+            String toTime = times[1].trim();
+            return new TimeSheet(fromTime, toTime);
+        }
+
+        return null;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> getMephiWeekSchedule(Document document) {
+        Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
+        DayOfWeek currentDayOfWeek = null;
+
+        Elements elements = document.select(".lesson-wday, .list-group");
+
+        for (Element element : elements) {
+            if (element.hasClass("lesson-wday")) {
+                String dayOfWeekText = element.text();
+                currentDayOfWeek = parseDayOfWeek(dayOfWeekText);
+            } else if (element.hasClass("list-group") && currentDayOfWeek != null) {
+                ScheduleDay scheduleDay = getMephiScheduleDay(element);
+                weekSchedule.put(currentDayOfWeek, scheduleDay);
+            }
+        }
+
+        return weekSchedule;
+    }
+
     @Override
     public Schedule mapSseuToSchedule(List<SseuApiResponse> weekSseuSchedules) {
         SseuApiResponse oddWeekSseuSchedule = weekSseuSchedules.get(0).getWeek().equals("ODD") ? weekSseuSchedules.get(0) : weekSseuSchedules.get(1);
@@ -59,12 +157,12 @@ public class MappingServiceImpl implements MappingService {
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
         for (DayOfWeek day : DayOfWeek.values()) {
-            scheduleDayMap.put(day, getScheduleDay(day, scheduleElement));
+            scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement));
         }
         return scheduleDayMap;
     }
 
-    private ScheduleDay getScheduleDay(DayOfWeek dayOfWeek, Element element) {
+    private ScheduleDay getSsauScheduleDay(DayOfWeek dayOfWeek, Element element) {
         Elements scheduleItemElements = element.getElementsByClass("schedule__item");
         List<Element> ssauTimeSheets = element.getElementsByClass("schedule__time");
         List<Element> ssauDayOfWeek = scheduleItemElements.subList(1, 7);
@@ -105,10 +203,10 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObjects;
     }
 
-    private List<String> getSsauScheduleGroups(Elements schduleGroupsElement) {
+    private List<String> getSsauScheduleGroups(Elements scheduleGroupsElement) {
         List<String> groupNames = new ArrayList<>();
-        List<Element> aElements = schduleGroupsElement.get(0).getElementsByTag("a");
-        List<Element> spanElements = schduleGroupsElement.get(0).getElementsByTag("span");
+        List<Element> aElements = scheduleGroupsElement.get(0).getElementsByTag("a");
+        List<Element> spanElements = scheduleGroupsElement.get(0).getElementsByTag("span");
         if (aElements.isEmpty()) {
             for (Element spanElement : spanElements) {
                 groupNames.add(spanElement.text());
@@ -266,5 +364,11 @@ public class MappingServiceImpl implements MappingService {
         return scheduleTypeMap.get(lessonType);
     }
 
-
+    private ScheduleType mapMephiLessonTypeToScheduleType(String lessonType) {
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "Лек", ScheduleType.LECTURE,
+                "Пр", ScheduleType.PRACTICE,
+                "Лаб", ScheduleType.LAB);
+        return scheduleTypeMap.get(lessonType);
+    }
 }

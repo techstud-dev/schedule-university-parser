@@ -20,7 +20,7 @@ public enum ScheduleType {
 
     public static ScheduleType returnTypeByRuName(String ruName) {
         return switch (ruName) {
-            case "Лекция" -> ScheduleType.LECTURE;
+            case "Лекция", "Лек" -> ScheduleType.LECTURE;
             case "Практика" -> ScheduleType.PRACTICE;
             case "Лабораторная работа", "Лабораторная" -> ScheduleType.LAB;
             case "Экзамен/зачет" -> ScheduleType.EXAM;
