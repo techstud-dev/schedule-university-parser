@@ -17,7 +17,6 @@ public class MephiParserTest {
         mappingService = new MappingServiceImpl();
     }
 
-
      // ТУТ 5 ГРУПП 5 РАЗНЫХ КУРСОВ, ОНИ ОБОЗНАЧЕНЫ ПО НОМЕРУ (1, 2, 3, 4, 5)
 
     @Test
