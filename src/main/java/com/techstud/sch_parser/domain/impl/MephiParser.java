@@ -19,7 +19,7 @@ public class MephiParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(Long groupId) throws Exception {
+    public Schedule parseSchedule(String groupId) throws Exception {
         String evenUrl = "https://home.mephi.ru/study_groups/" + groupId + "/schedule?period=0";
         String oddUrl = "https://home.mephi.ru/study_groups/" + groupId + "/schedule?period=1";
 

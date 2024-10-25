@@ -17,37 +17,36 @@ public class MephiParserTest {
         mappingService = new MappingServiceImpl();
     }
 
-    /**
-     * ТУТ 5 ГРУПП 5 РАЗНЫХ КУРСОВ, ОНИ ОБОЗНАЧЕНЫ ПО НОМЕРУ (1, 2, 3, 4, 5)
-     */
+
+     // ТУТ 5 ГРУПП 5 РАЗНЫХ КУРСОВ, ОНИ ОБОЗНАЧЕНЫ ПО НОМЕРУ (1, 2, 3, 4, 5)
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure1() throws Exception {
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(19468L));
+        System.out.println(underTest.parseSchedule(String.valueOf(19468)));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure2() throws Exception {
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(19389L));
+        System.out.println(underTest.parseSchedule(String.valueOf(19389)));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure3() throws Exception {
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(19323L));
+        System.out.println(underTest.parseSchedule(String.valueOf(19323)));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure4() throws Exception {
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(19267L));
+        System.out.println(underTest.parseSchedule(String.valueOf(19267)));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure5() throws Exception {
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(19266L));
+        System.out.println(underTest.parseSchedule(String.valueOf(19266)));
     }
 }

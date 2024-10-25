@@ -46,117 +46,6 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    private ScheduleDay getMephiScheduleDay(Element element) {
-        List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
-        log.debug("Processing list-group, found {} group items", groupList.size());
-
-        ScheduleDay scheduleDay = new ScheduleDay();
-        Map<TimeSheet, List<ScheduleObject>> scheduleDayMap = new LinkedHashMap<>();
-
-        for (Element groupElement : groupList) {
-            Elements timeElements = groupElement.select(".lesson-time");
-
-            String timeRange = timeElements.first().text();
-            TimeSheet timeSheet = parseTimeSheet(timeRange);
-
-            List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
-            scheduleDayMap.put(timeSheet, scheduleObjects);
-        }
-
-        log.debug("Finished processing list-group, resulting scheduleDayMap: {}", scheduleDayMap);
-        scheduleDay.setLessons(scheduleDayMap);
-        return scheduleDay;
-    }
-
-    private List<ScheduleObject> getMephiScheduleObjects(Element element) {
-        List<ScheduleObject> scheduleObjects = new ArrayList<>();
-
-        Elements lessonElements = element.select(".lesson-lessons > .lesson");
-
-        for (Element lessonElement : lessonElements) {
-            ScheduleObject scheduleObject = new ScheduleObject();
-
-            String fullText = lessonElement.ownText().trim();
-            String[] ownTextParts = fullText.split("Подгруппа");
-            String lessonName = ownTextParts[0].trim();
-
-            List<String> groups = new ArrayList<>();
-            if (ownTextParts.length > 1) {
-                groups.add("Подгруппа " + ownTextParts[1].trim());
-            }
-
-            String place = null;
-            Element placeElement = lessonElement.selectFirst("i.fa-map-marker + a.text-nowrap");
-            if (placeElement != null) {
-                place = placeElement.text().trim();
-            }
-
-            if (place == null) {
-                Element altPlaceElement = lessonElement.selectFirst("span.label.label-purple");
-                if (altPlaceElement != null) {
-                    place = altPlaceElement.text().trim();
-                }
-            }
-
-            Elements teacherElements = lessonElement.select("i.fa-graduation-cap + span.text-nowrap a.text-nowrap");
-            List<String> teachers = new ArrayList<>();
-            for (Element teacherElement : teacherElements) {
-                teachers.add(teacherElement.text().trim());
-            }
-
-            String type = lessonElement.select(".label-lesson").text().trim();
-
-            if (type.isEmpty()) {
-                Element titleElement = lessonElement.selectFirst(".title");
-                if (titleElement != null && titleElement.text().contains("Резерв"))
-                    type = "Резерв";
-                else
-                    type = "UNKNOWN";
-            }
-
-            scheduleObject.setType(mapMephiLessonTypeToScheduleType(type));
-            scheduleObject.setName(lessonName);
-            scheduleObject.setTeacher(teachers.isEmpty() ? null : String.join(", ", teachers));
-            scheduleObject.setPlace(place);
-            scheduleObject.setGroups(groups);
-
-            scheduleObjects.add(scheduleObject);
-        }
-
-        log.debug("Extracted schedule objects: {}", scheduleObjects);
-        return scheduleObjects;
-    }
-
-    private TimeSheet parseTimeSheet(String timeRange) {
-        String[] times = timeRange.split("—");
-        if (times.length == 2) {
-            String fromTime = times[0].trim();
-            String toTime = times[1].trim();
-            return new TimeSheet(fromTime, toTime);
-        }
-
-        return null;
-    }
-
-    private Map<DayOfWeek, ScheduleDay> getMephiWeekSchedule(Document document) {
-        Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
-        DayOfWeek currentDayOfWeek = null;
-
-        Elements elements = document.select(".lesson-wday, .list-group");
-
-        for (Element element : elements) {
-            if (element.hasClass("lesson-wday")) {
-                String dayOfWeekText = element.text();
-                currentDayOfWeek = parseDayOfWeek(dayOfWeekText);
-            } else if (element.hasClass("list-group") && currentDayOfWeek != null) {
-                ScheduleDay scheduleDay = getMephiScheduleDay(element);
-                weekSchedule.put(currentDayOfWeek, scheduleDay);
-            }
-        }
-
-        return weekSchedule;
-    }
-
     @Override
     public Schedule mapSseuToSchedule(List<SseuApiResponse> weekSseuSchedules) {
         SseuApiResponse oddWeekSseuSchedule = weekSseuSchedules.get(0).getWeek().equals("ODD") ? weekSseuSchedules.get(0) : weekSseuSchedules.get(1);
@@ -222,6 +111,114 @@ public class MappingServiceImpl implements MappingService {
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
         return schedule;
+    }
+
+    private ScheduleDay getMephiScheduleDay(Element element) {
+        List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
+
+        ScheduleDay scheduleDay = new ScheduleDay();
+        Map<TimeSheet, List<ScheduleObject>> scheduleDayMap = new LinkedHashMap<>();
+
+        for (Element groupElement : groupList) {
+            Elements timeElements = groupElement.select(".lesson-time");
+
+            String timeRange = timeElements.first().text();
+            TimeSheet timeSheet = parseTimeSheet(timeRange);
+
+            List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
+            scheduleDayMap.put(timeSheet, scheduleObjects);
+        }
+
+        scheduleDay.setLessons(scheduleDayMap);
+        return scheduleDay;
+    }
+
+    private List<ScheduleObject> getMephiScheduleObjects(Element element) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
+
+        Elements lessonElements = element.select(".lesson-lessons > .lesson");
+
+        for (Element lessonElement : lessonElements) {
+            ScheduleObject scheduleObject = new ScheduleObject();
+
+            String fullText = lessonElement.ownText().trim();
+            String[] ownTextParts = fullText.split("Подгруппа");
+            String lessonName = ownTextParts[0].trim();
+
+            List<String> groups = new ArrayList<>();
+            if (ownTextParts.length > 1) {
+                groups.add("Подгруппа " + ownTextParts[1].trim());
+            }
+
+            String place = null;
+            Element placeElement = lessonElement.selectFirst("i.fa-map-marker + a.text-nowrap");
+            if (placeElement != null) {
+                place = placeElement.text().trim();
+            }
+
+            if (place == null) {
+                Element altPlaceElement = lessonElement.selectFirst("span.label.label-purple");
+                if (altPlaceElement != null) {
+                    place = altPlaceElement.text().trim();
+                }
+            }
+
+            Elements teacherElements = lessonElement.select("i.fa-graduation-cap + span.text-nowrap a.text-nowrap");
+            List<String> teachers = new ArrayList<>();
+            for (Element teacherElement : teacherElements) {
+                teachers.add(teacherElement.text().trim());
+            }
+
+            String type = lessonElement.select(".label-lesson").text().trim();
+
+            if (type.isEmpty()) {
+                Element titleElement = lessonElement.selectFirst(".title");
+                if (titleElement != null && titleElement.text().contains("Резерв"))
+                    type = "Резерв";
+                else
+                    type = "UNKNOWN";
+            }
+
+            scheduleObject.setType(mapMephiLessonTypeToScheduleType(type));
+            scheduleObject.setName(lessonName);
+            scheduleObject.setTeacher(teachers.isEmpty() ? null : String.join(", ", teachers));
+            scheduleObject.setPlace(place);
+            scheduleObject.setGroups(groups);
+
+            scheduleObjects.add(scheduleObject);
+        }
+
+        return scheduleObjects;
+    }
+
+    private TimeSheet parseTimeSheet(String timeRange) {
+        String[] times = timeRange.split("—");
+        if (times.length == 2) {
+            String fromTime = times[0].trim();
+            String toTime = times[1].trim();
+            return new TimeSheet(fromTime, toTime);
+        }
+
+        return null;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> getMephiWeekSchedule(Document document) {
+        Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
+        DayOfWeek currentDayOfWeek = null;
+
+        Elements elements = document.select(".lesson-wday, .list-group");
+
+        for (Element element : elements) {
+            if (element.hasClass("lesson-wday")) {
+                String dayOfWeekText = element.text();
+                currentDayOfWeek = parseDayOfWeek(dayOfWeekText);
+            } else if (element.hasClass("list-group") && currentDayOfWeek != null) {
+                ScheduleDay scheduleDay = getMephiScheduleDay(element);
+                weekSchedule.put(currentDayOfWeek, scheduleDay);
+            }
+        }
+
+        return weekSchedule;
     }
 
     private void addToSchedule(Map<DayOfWeek, ScheduleDay> weekSchedule, DayOfWeek dayOfWeek, BmstuScheduleItem scheduleItem) {
