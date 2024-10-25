@@ -145,6 +145,8 @@ public class MappingServiceImpl implements MappingService {
             String[] ownTextParts = fullText.split("Подгруппа");
             String lessonName = ownTextParts[0].trim();
 
+            lessonName = lessonName.replaceAll("[,\\s]+$", "");
+
             List<String> groups = new ArrayList<>();
             if (ownTextParts.length > 1) {
                 groups.add("Подгруппа " + ownTextParts[1].trim());
@@ -163,10 +165,13 @@ public class MappingServiceImpl implements MappingService {
                 }
             }
 
-            Elements teacherElements = lessonElement.select("i.fa-graduation-cap + span.text-nowrap a.text-nowrap");
+            Elements teacherElements = lessonElement.select("span.text-nowrap");
             List<String> teachers = new ArrayList<>();
             for (Element teacherElement : teacherElements) {
-                teachers.add(teacherElement.text().trim());
+                Element linkElement = teacherElement.selectFirst("a");
+                if (linkElement != null) {
+                    teachers.add(linkElement.text().trim());
+                }
             }
 
             String type = lessonElement.select(".label-lesson").text().trim();

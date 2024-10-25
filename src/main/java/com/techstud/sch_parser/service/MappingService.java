@@ -8,8 +8,8 @@ import org.jsoup.nodes.Document;
 import java.util.List;
 
 public interface MappingService {
-    Schedule mapSseuToSchedule(List<SseuApiResponse> weekSseuSchedules);
-    Schedule mapSsauToSchedule(List<Document> documents);
-    Schedule mapMephiToSchedule(List<Document> documents);
+    Schedule mapSseuToSchedule (List<SseuApiResponse> weekSseuSchedules);
+    Schedule mapSsauToSchedule (List<Document> documents);
+    Schedule mapMephiToSchedule (List<Document> documents);
     Schedule mapBmstuToSchedule (BmstuApiResponse bmstuApiResponse);
 }
