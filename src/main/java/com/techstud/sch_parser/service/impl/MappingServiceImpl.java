@@ -72,13 +72,49 @@ public class MappingServiceImpl implements MappingService {
         for (Element lessonElement : lessonElements) {
             ScheduleObject scheduleObject = new ScheduleObject();
 
-            String lessonName = lessonElement.ownText().trim();
-            String teacher = lessonElement.select("a.text-nowrap").text();
-            String type = lessonElement.select(".label-lesson").text();
+            String fullText = lessonElement.ownText().trim();
+            String[] ownTextParts = fullText.split("Подгруппа");
+            String lessonName = ownTextParts[0].trim();
 
-            scheduleObject.setName(lessonName);
-            scheduleObject.setTeacher(teacher);
+            List<String> groups = new ArrayList<>();
+            if (ownTextParts.length > 1) {
+                groups.add("Подгруппа " + ownTextParts[1].trim());
+            }
+
+            String place = null;
+            Element placeElement = lessonElement.selectFirst("i.fa-map-marker + a.text-nowrap");
+            if (placeElement != null) {
+                place = placeElement.text().trim();
+            }
+
+            if (place == null) {
+                Element altPlaceElement = lessonElement.selectFirst("span.label.label-purple");
+                if (altPlaceElement != null) {
+                    place = altPlaceElement.text().trim();
+                }
+            }
+
+            Elements teacherElements = lessonElement.select("i.fa-graduation-cap + span.text-nowrap a.text-nowrap");
+            List<String> teachers = new ArrayList<>();
+            for (Element teacherElement : teacherElements) {
+                teachers.add(teacherElement.text().trim());
+            }
+
+            String type = lessonElement.select(".label-lesson").text().trim();
+
+            if (type.isEmpty()) {
+                Element titleElement = lessonElement.selectFirst(".title");
+                if (titleElement != null && titleElement.text().contains("Резерв"))
+                    type = "Резерв";
+                else
+                    type = "UNKNOWN";
+            }
+
             scheduleObject.setType(mapMephiLessonTypeToScheduleType(type));
+            scheduleObject.setName(lessonName);
+            scheduleObject.setTeacher(teachers.isEmpty() ? null : String.join(", ", teachers));
+            scheduleObject.setPlace(place);
+            scheduleObject.setGroups(groups);
 
             scheduleObjects.add(scheduleObject);
         }
@@ -368,7 +404,9 @@ public class MappingServiceImpl implements MappingService {
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
                 "Лек", ScheduleType.LECTURE,
                 "Пр", ScheduleType.PRACTICE,
-                "Лаб", ScheduleType.LAB);
-        return scheduleTypeMap.get(lessonType);
+                "Лаб", ScheduleType.LAB,
+                "Резерв", ScheduleType.UNKNOWN
+        );
+        return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
 }
