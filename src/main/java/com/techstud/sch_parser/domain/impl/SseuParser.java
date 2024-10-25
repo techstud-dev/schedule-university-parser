@@ -31,7 +31,7 @@ public class SseuParser implements Parser {
 
     @Override
     @Profiling
-    public Schedule parseSchedule(Long groupId) throws Exception {
+    public Schedule parseSchedule(String groupId) throws Exception {
 
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
