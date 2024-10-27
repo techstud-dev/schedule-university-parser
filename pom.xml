@@ -6,11 +6,11 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.3.4</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.techstud</groupId>
 	<artifactId>sch-parser</artifactId>
-	<version>${application.version}</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>Schedule Parser</name>
 	<description>Schedule parser for getting schedule from university sites</description>
 	<url/>
@@ -49,6 +49,8 @@
 		<kafka.version>3.2.3</kafka.version>
 		<prometheus.version>1.13.5</prometheus.version>
 		<guava.version>33.3.1-jre</guava.version>
+		<log4j2.version>2.14.1</log4j2.version>
+		<disruptor.version>3.4.4</disruptor.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -146,22 +148,22 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.24.1</version>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.24.1</version>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-jul</artifactId>
-            <version>2.24.1</version>
+            <version>${log4j2.version}</version>
         </dependency>
 		<dependency>
 			<groupId>com.lmax</groupId>
 			<artifactId>disruptor</artifactId>
-			<version>3.4.4</version>
+			<version>${disruptor.version}</version>
 		</dependency>
     </dependencies>
 
@@ -179,40 +181,6 @@
                     </excludes>
                 </configuration>
             </plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M5</version>
-				<configuration>
-					<argLine>-Djavax.net.debug=ssl,handshake</argLine>
-					<argLine>-Djavax.net.ssl.trustStore=src/test/resources/redis/truststore.jks</argLine>
-					<argLine>-Djavax.net.ssl.trustStorePassword=password</argLine>
-				</configuration>
-			</plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M3</version>
-                <executions>
-                    <execution>
-                        <id>enforce</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>[3.5,)</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>[1.8,)</version>
-                                </requireJavaVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
-
 </project>
