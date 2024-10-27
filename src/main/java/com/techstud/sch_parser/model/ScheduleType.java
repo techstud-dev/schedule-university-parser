@@ -14,6 +14,7 @@ public enum ScheduleType {
     LAB("Лабораторная работа"),
     EXAM("Экзамен/зачет"),
     CONSULTATION("Консультация"),
+    INDEPENDENT_WORK("Самостоятельная работа"),
     UNKNOWN("Другое");
 
     private final String ruName;
@@ -25,6 +26,7 @@ public enum ScheduleType {
             case "Лабораторная работа", "Лабораторная" -> ScheduleType.LAB;
             case "Экзамен/зачет" -> ScheduleType.EXAM;
             case "Консультация" -> ScheduleType.CONSULTATION;
+            case "Самостоятельная работа" -> ScheduleType.INDEPENDENT_WORK;
             default -> ScheduleType.UNKNOWN;
         };
     }
