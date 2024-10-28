@@ -31,7 +31,6 @@ import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticParseDa
 @Service
 @Slf4j
 public class MappingServiceImpl implements MappingService {
-    private TimeSheet lastTimeSheet = null;
 
     @Override
     public Schedule mapMephiToSchedule(List<Document> documents) {
@@ -116,9 +115,10 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
+    @Override
     public Schedule mapNsuToSchedule(Document document) {
         Schedule schedule = new Schedule();
-        lastTimeSheet = null;
+        TimeSheet lastTimeSheet = null;
 
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
@@ -132,7 +132,7 @@ public class MappingServiceImpl implements MappingService {
         Elements rows = document.select("table.time-table tbody tr");
 
         for (Element row : rows) {
-            getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek);
+            lastTimeSheet = getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek, lastTimeSheet);
         }
 
         schedule.setEvenWeekSchedule(evenWeekSchedule);
@@ -140,9 +140,9 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    private void getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
+    private TimeSheet getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
                                    Map<DayOfWeek, ScheduleDay> oddWeekSchedule,
-                                   DayOfWeek[] daysOfWeek) {
+                                   DayOfWeek[] daysOfWeek, TimeSheet lastTimeSheet) {
         Element timeCell = row.select("td").first();
         if (timeCell != null) {
             String timeText = timeCell.text().trim();
@@ -182,6 +182,7 @@ public class MappingServiceImpl implements MappingService {
                 dayIndex++;
             }
         }
+        return lastTimeSheet;
     }
 
     private List<ScheduleObject> getNsuScheduleObjects(Element element) {
