@@ -142,7 +142,7 @@ public class MappingServiceImpl implements MappingService {
             }
         });
         Iterator<Integer> borderIndexesIterator = borderIndexes.iterator();
-
+        //Todo: implement this!
         while (borderIndexesIterator.hasNext()) {
 
         }
