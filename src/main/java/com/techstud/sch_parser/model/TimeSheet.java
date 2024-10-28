@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 @Data
@@ -22,6 +23,12 @@ public class TimeSheet {
     }
 
     public TimeSheet(String from) {
-        this.from = LocalTime.parse(from);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H:mm");
+        try {
+            this.from = LocalTime.parse(from, formatter);
+        } catch (DateTimeParseException e) {
+            System.err.println("Ошибка парсинга времени: " + from);
+            throw e;
+        }
     }
 }
