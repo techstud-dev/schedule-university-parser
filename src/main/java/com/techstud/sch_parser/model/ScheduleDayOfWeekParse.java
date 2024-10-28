@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ScheduleDayOfWeekParse {
-    public static DayOfWeek parseDayOfWeek(String dayName) {
+    public static DayOfWeek staticParseDayOfWeek(String dayName) {
         return switch (dayName.toLowerCase()) {
             case "понедельник" -> java.time.DayOfWeek.MONDAY;
             case "вторник" -> java.time.DayOfWeek.TUESDAY;

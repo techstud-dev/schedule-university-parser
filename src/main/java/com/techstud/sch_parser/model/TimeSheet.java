@@ -21,4 +21,7 @@ public class TimeSheet {
         this.to = LocalTime.parse(to);
     }
 
+    public TimeSheet(String from) {
+        this.from = LocalTime.parse(from);
+    }
 }
