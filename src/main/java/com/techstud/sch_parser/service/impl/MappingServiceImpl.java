@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.parseDayOfWeek;
+import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticParseDayOfWeek;
 
 @Service
 @Slf4j
@@ -115,6 +115,91 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
+    @Override
+    public Schedule mapNsuToSchedule(Document document) {
+        Schedule schedule = new Schedule();
+
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
+        DayOfWeek[] daysOfWeek = DayOfWeek.values();
+
+        for (DayOfWeek day : daysOfWeek) {
+            evenWeekSchedule.put(day, new ScheduleDay());
+            oddWeekSchedule.put(day, new ScheduleDay());
+        }
+
+        Elements rows = document.select("table.time-table tbody tr");
+
+        for (Element row : rows) {
+            getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek);
+        }
+
+        schedule.setEvenWeekSchedule(evenWeekSchedule);
+        schedule.setOddWeekSchedule(oddWeekSchedule);
+        return schedule;
+    }
+
+    private void getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
+                                   Map<DayOfWeek, ScheduleDay> oddWeekSchedule,
+                                   DayOfWeek[] daysOfWeek) {
+        Element timeCell = row.select("td").first();
+        if (timeCell != null) {
+            String time = timeCell.text().trim();
+            TimeSheet timeSheet = new TimeSheet(time);
+
+            Elements dayCells = row.select("td:not(:first-child)");
+            int dayIndex = 0;
+
+            for (Element dayCell : dayCells) {
+                Elements lessonCells = dayCell.select("div.cell");
+
+                for (Element lessonCell : lessonCells) {
+                    List<ScheduleObject> scheduleObjects = getNsuScheduleObjects(lessonCell);
+
+                    String weekIndicator = lessonCell.select(".week").text().trim();
+
+                    for (ScheduleObject scheduleObject : scheduleObjects) {
+                        if (weekIndicator.isEmpty()) {
+                            evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
+                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                            oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
+                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                        } else if (weekIndicator.equals("Четная")) {
+                            evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
+                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                        } else if (weekIndicator.equals("Нечетная")) {
+                            oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
+                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                        }
+                    }
+                }
+                dayIndex++;
+            }
+        }
+    }
+
+    private List<ScheduleObject> getNsuScheduleObjects(Element element) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
+        Elements lessons = element.select("div.cell");
+
+        for (Element lesson : lessons) {
+            String type = lesson.select(".type").text().trim();
+            String subject = lesson.select(".subject").text().trim();
+            String teacher = lesson.select(".tutor").text().trim();
+            String place = lesson.select(".room a").text().trim();
+
+            ScheduleObject scheduleObject = new ScheduleObject();
+            scheduleObject.setType(mapNsuLessonTypeToScheduleType(type));
+            scheduleObject.setName(subject.isEmpty() ? null : subject);
+            scheduleObject.setPlace(place.isEmpty() ? null : place);
+            scheduleObject.setTeacher(teacher.isEmpty() ? null : teacher);
+
+            scheduleObjects.add(scheduleObject);
+        }
+
+        return scheduleObjects;
+    }
+
     private ScheduleDay getMephiScheduleDay(Element element) {
         List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
 
@@ -125,7 +210,7 @@ public class MappingServiceImpl implements MappingService {
             Elements timeElements = groupElement.select(".lesson-time");
 
             String timeRange = timeElements.first().text();
-            TimeSheet timeSheet = parseTimeSheet(timeRange);
+            TimeSheet timeSheet = parseMephiTimeSheet(timeRange);
 
             List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
             scheduleDayMap.put(timeSheet, scheduleObjects);
@@ -295,7 +380,7 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObjects;
     }
 
-    private TimeSheet parseTimeSheet(String timeRange) {
+    private TimeSheet parseMephiTimeSheet(String timeRange) {
         String[] times = timeRange.split("—");
         if (times.length == 2) {
             String fromTime = times[0].trim();
@@ -315,7 +400,7 @@ public class MappingServiceImpl implements MappingService {
         for (Element element : elements) {
             if (element.hasClass("lesson-wday")) {
                 String dayOfWeekText = element.text();
-                currentDayOfWeek = parseDayOfWeek(dayOfWeekText);
+                currentDayOfWeek = staticParseDayOfWeek(dayOfWeekText);
             } else if (element.hasClass("list-group") && currentDayOfWeek != null) {
                 ScheduleDay scheduleDay = getMephiScheduleDay(element);
                 weekSchedule.put(currentDayOfWeek, scheduleDay);
@@ -603,6 +688,14 @@ public class MappingServiceImpl implements MappingService {
                 "Лаб", ScheduleType.LAB,
                 "Резерв", ScheduleType.UNKNOWN
         );
+        return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
+    }
+
+    private ScheduleType mapNsuLessonTypeToScheduleType(String lessonType) {
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "пр", ScheduleType.PRACTICE,
+                "лек", ScheduleType.LECTURE,
+                "лаб", ScheduleType.LAB);
         return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
 }
