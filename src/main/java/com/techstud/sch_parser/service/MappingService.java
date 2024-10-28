@@ -15,4 +15,5 @@ public interface MappingService {
     Schedule mapMephiToSchedule (List<Document> documents);
     Schedule mapBmstuToSchedule (BmstuApiResponse bmstuApiResponse);
     Schedule mapTltsuToSchedule (List<TltsuApiResponse> documents) throws EmptyScheduleException;
+    Schedule mapUneconToSchedule(Document document);
 }

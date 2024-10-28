@@ -115,6 +115,71 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
+    @Override
+    public Schedule mapUneconToSchedule(Document document) {
+        Schedule schedule = new Schedule();
+        Element tableSchedule = document.getElementsByTag("table").first();
+        assert tableSchedule != null;
+        Elements dayObjects = tableSchedule.getElementsByClass("new_day");
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
+        dayObjects.forEach(dayObject -> {
+            evenWeekSchedule.put(getDayOfWeekFromUnecon(dayObject), addScheduleFromUnecon(tableSchedule, true));
+            oddWeekSchedule.put(getDayOfWeekFromUnecon(dayObject), addScheduleFromUnecon(tableSchedule, false));
+
+        });
+        return schedule;
+    }
+
+    private ScheduleDay addScheduleFromUnecon(Element tableSchedule, boolean isEven) {
+        ScheduleDay scheduleDay = new ScheduleDay();
+        Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
+        Elements trElements = tableSchedule.getElementsByTag("tr");
+        Set<Integer> borderIndexes = new LinkedHashSet<>();
+        trElements.forEach(trElement ->{
+            if (trElement.is("tr.new_day_border") || trElement.is("tr.new_day")) {
+                borderIndexes.add(trElements.indexOf(trElement));
+            }
+        });
+        Iterator<Integer> borderIndexesIterator = borderIndexes.iterator();
+
+        while (borderIndexesIterator.hasNext()) {
+
+        }
+        return scheduleDay;
+    }
+
+    private DayOfWeek getDayOfWeekFromUnecon(Element element) {
+        String dayOfWeekUnecon = Objects.requireNonNull(element.select("span.day").first()).text();
+        switch (dayOfWeekUnecon) {
+            case "ПН" -> {
+                return DayOfWeek.MONDAY;
+            }
+            case "ВТ" -> {
+                return DayOfWeek.TUESDAY;
+            }
+            case "СР" -> {
+                return DayOfWeek.WEDNESDAY;
+            }
+            case "ЧТ" -> {
+                return DayOfWeek.THURSDAY;
+            }
+            case "ПТ" -> {
+                return DayOfWeek.FRIDAY;
+            }
+            case "СБ" -> {
+                return DayOfWeek.SATURDAY;
+            }
+            case "ВС" -> {
+                return DayOfWeek.SUNDAY;
+            }
+            default -> {
+                return null;
+            }
+        }
+
+    }
+
     private ScheduleDay getMephiScheduleDay(Element element) {
         List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
 
