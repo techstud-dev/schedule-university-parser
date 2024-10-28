@@ -1,5 +1,6 @@
 package com.techstud.sch_parser.service.impl;
 
+import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.model.*;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuScheduleItem;
@@ -7,6 +8,9 @@ import com.techstud.sch_parser.model.api.response.bmstu.BmstuTeacher;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
 import com.techstud.sch_parser.model.api.response.sseu.SseuLessonDay;
 import com.techstud.sch_parser.model.api.response.sseu.SseuSubject;
+import com.techstud.sch_parser.model.api.response.tltsu.TltsuApiResponse;
+import com.techstud.sch_parser.model.api.response.tltsu.TltsuGroup;
+import com.techstud.sch_parser.model.api.response.tltsu.TltsuSchedule;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
@@ -14,6 +18,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -93,18 +99,14 @@ public class MappingServiceImpl implements MappingService {
             DayOfWeek dayOfWeek = DayOfWeek.of(scheduleItem.getDay());
 
             switch (scheduleItem.getWeek()) {
-                case "all":
+                case "all" -> {
                     addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
                     addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
-                    break;
-                case "ch":
-                    addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
-                    break;
-                case "zn":
-                    addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
-                    break;
-                default:
-                    break;
+                }
+                case "ch" -> addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
+                case "zn" -> addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
+                default -> {
+                }
             }
         }
 
@@ -216,6 +218,103 @@ public class MappingServiceImpl implements MappingService {
 
         scheduleDay.setLessons(scheduleDayMap);
         return scheduleDay;
+    }
+
+    @Override
+    public Schedule mapTltsuToSchedule(List<TltsuApiResponse> response) throws EmptyScheduleException {
+        TltsuApiResponse oddSchedule = response.get(0);
+        TltsuApiResponse evenSchedule = response.get(1);
+
+        if (oddSchedule.getSchedules().isEmpty() || evenSchedule.getSchedules().isEmpty()) {
+            throw new EmptyScheduleException("Empty schedule getting from TLTSU");
+        }
+        Schedule schedule = new Schedule();
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = getWeekScheduleFromTltsu(oddSchedule);
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = getWeekScheduleFromTltsu(evenSchedule);
+        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setEvenWeekSchedule(evenWeekSchedule);
+        return schedule;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> getWeekScheduleFromTltsu(TltsuApiResponse tltsuApiResponse) {
+        Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
+        tltsuApiResponse.getSchedules().forEach(schedule -> {
+            DayOfWeek currentDayOfWeek = getDayOfWeekTltsu(schedule);
+            weekSchedule.put(currentDayOfWeek, addScheduleFromTltsu(weekSchedule.get(currentDayOfWeek), schedule));
+        });
+
+        return weekSchedule;
+    }
+
+    private ScheduleDay addScheduleFromTltsu(ScheduleDay scheduleDay, TltsuSchedule schedule) {
+        if (scheduleDay == null) {
+            scheduleDay = new ScheduleDay();
+        }
+        TimeSheet timeSheet = getTimeSheet(schedule);
+        Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
+
+        if (lessons == null) {
+            lessons = new LinkedHashMap<>();
+        }
+        List<ScheduleObject> scheduleObjects = lessons.computeIfAbsent(timeSheet, k -> new ArrayList<>());
+        scheduleObjects.add(getScheduleObjectFromTltsuSchedule(schedule));
+        lessons.put(timeSheet, scheduleObjects);
+        scheduleDay.setLessons(lessons);
+        scheduleDay.setDate(parseTltsuDate(schedule.getDate()));
+        return scheduleDay;
+    }
+
+    private ScheduleObject getScheduleObjectFromTltsuSchedule(TltsuSchedule schedule) {
+        ScheduleObject scheduleObject = new ScheduleObject();
+        scheduleObject.setName(schedule.getDisciplineName());
+        scheduleObject.setPlace(schedule.getClassroom().getName());
+        if (schedule.getTeacher() != null) {
+            scheduleObject.setTeacher(schedule.getTeacher().getLastName() + " " + schedule.getTeacher().getName() + ""
+                    + schedule.getTeacher().getPatronymic());
+        }
+        scheduleObject.setGroups(schedule.getGroupsList()
+                .stream()
+                .map(TltsuGroup::getName)
+                .toList());
+        scheduleObject.setType(getScheduleTypeFromTltsuSchedule(schedule));
+        return scheduleObject;
+    }
+
+    private ScheduleType getScheduleTypeFromTltsuSchedule(TltsuSchedule schedule) {
+        if (schedule.getType() == null) {
+            return ScheduleType.UNKNOWN;
+        }
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "Лек", ScheduleType.LECTURE,
+                "Пр", ScheduleType.PRACTICE,
+                "СР", ScheduleType.INDEPENDENT_WORK,
+                "ЛР", ScheduleType.LAB
+        );
+        return scheduleTypeMap.getOrDefault(schedule.getType(), ScheduleType.UNKNOWN);
+    }
+
+    private Date parseTltsuDate(String date) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy.MM.dd");
+        try {
+            return formatter.parse(date);
+        } catch (ParseException e) {
+            log.warn("Error while parsing date {} TLTSU", date);
+            return null;
+        }
+    }
+
+    private TimeSheet getTimeSheet(TltsuSchedule schedule) {
+        Instant dateFrom = Instant.parse(schedule.getFromTime());
+        Instant dateTo = Instant.parse(schedule.getToTime());
+        LocalDateTime localDateTimeFrom = LocalDateTime.ofInstant(dateFrom, ZoneOffset.UTC);
+        LocalDateTime localDateTimeTo = LocalDateTime.ofInstant(dateTo, ZoneOffset.UTC);
+        return new TimeSheet(localDateTimeFrom.toLocalTime(), localDateTimeTo.toLocalTime());
+    }
+
+    private DayOfWeek getDayOfWeekTltsu(TltsuSchedule schedule) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+        LocalDate date = LocalDate.parse(schedule.getDate(), formatter);
+        return date.getDayOfWeek();
     }
 
     private List<ScheduleObject> getMephiScheduleObjects(Element element) {
@@ -482,6 +581,7 @@ public class MappingServiceImpl implements MappingService {
                     }
                     List<ScheduleObject> scheduleObjects = lessons.get(timeSheet);
                     ScheduleObject addedScheduleObject = mapSseuLessonToScheduleObject(sseuSchedule.getBody().get(finalI).getDaySchedule().get(day));
+                    assert addedScheduleObject != null;
                     if (addedScheduleObject.getName() != null && addedScheduleObject.getType() != null && addedScheduleObject.getPlace() != null) {
                         scheduleObjects.add(addedScheduleObject);
                     }

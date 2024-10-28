@@ -33,8 +33,6 @@ public class SsauParser implements Parser {
 
         final String evenUrl = MessageFormat.format(samaraUniversityScheduleUrl, evenParameters[0], evenParameters[1]);
         final String oddUrl = MessageFormat.format(samaraUniversityScheduleUrl, oddParameters[0], oddParameters[1]);
-        log.info(oddUrl);
-        log.info(evenUrl);
         Document evenDoc = Jsoup.connect(evenUrl).userAgent(userAgent).referrer(referrer).get();
 
         Document oddDoc = Jsoup.connect(oddUrl).userAgent(userAgent).referrer(referrer).get();
@@ -43,7 +41,6 @@ public class SsauParser implements Parser {
     }
 
     private String[] getCurrentWeekNumbers(TimeZone timeZone) {
-        log.info(timeZone.toString());
         String[] parseWeeks;
         Calendar currentCalendar = Calendar.getInstance();
         currentCalendar.setTimeZone(timeZone);

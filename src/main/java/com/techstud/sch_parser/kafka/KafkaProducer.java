@@ -20,11 +20,11 @@ public class KafkaProducer {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void sendCompleteToKafka(String id, String topic, Object parserResult) {
+    public void sendToKafka(String id, String topic, Object objectMessage) {
         String parserResultAsString;
 
         try {
-            parserResultAsString = mapper.writeValueAsString(parserResult);
+            parserResultAsString = mapper.writeValueAsString(objectMessage);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
             return;
