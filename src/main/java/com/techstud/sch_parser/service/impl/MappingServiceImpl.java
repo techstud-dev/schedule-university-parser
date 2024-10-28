@@ -118,6 +118,7 @@ public class MappingServiceImpl implements MappingService {
     @Override
     public Schedule mapNsuToSchedule(Document document) {
         Schedule schedule = new Schedule();
+        TimeSheet lastTimeSheet = null;
 
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
@@ -131,7 +132,7 @@ public class MappingServiceImpl implements MappingService {
         Elements rows = document.select("table.time-table tbody tr");
 
         for (Element row : rows) {
-            getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek);
+            lastTimeSheet = getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek, lastTimeSheet);
         }
 
         schedule.setEvenWeekSchedule(evenWeekSchedule);
@@ -139,13 +140,19 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    private void getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
+    private TimeSheet getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
                                    Map<DayOfWeek, ScheduleDay> oddWeekSchedule,
-                                   DayOfWeek[] daysOfWeek) {
+                                   DayOfWeek[] daysOfWeek, TimeSheet lastTimeSheet) {
         Element timeCell = row.select("td").first();
         if (timeCell != null) {
-            String time = timeCell.text().trim();
-            TimeSheet timeSheet = new TimeSheet(time);
+            String timeText = timeCell.text().trim();
+            TimeSheet currentSheet = new TimeSheet(timeText);
+
+            if (lastTimeSheet != null) {
+                lastTimeSheet.setTo(currentSheet.getFrom());
+            }
+
+            lastTimeSheet = currentSheet;
 
             Elements dayCells = row.select("td:not(:first-child)");
             int dayIndex = 0;
@@ -155,27 +162,27 @@ public class MappingServiceImpl implements MappingService {
 
                 for (Element lessonCell : lessonCells) {
                     List<ScheduleObject> scheduleObjects = getNsuScheduleObjects(lessonCell);
-
                     String weekIndicator = lessonCell.select(".week").text().trim();
 
                     for (ScheduleObject scheduleObject : scheduleObjects) {
                         if (weekIndicator.isEmpty()) {
                             evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                             oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                         } else if (weekIndicator.equals("Четная")) {
                             evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                         } else if (weekIndicator.equals("Нечетная")) {
                             oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                         }
                     }
                 }
                 dayIndex++;
             }
         }
+        return lastTimeSheet;
     }
 
     private List<ScheduleObject> getNsuScheduleObjects(Element element) {
