@@ -31,6 +31,7 @@ import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticParseDa
 @Service
 @Slf4j
 public class MappingServiceImpl implements MappingService {
+    private TimeSheet lastTimeSheet = null;
 
     @Override
     public Schedule mapMephiToSchedule(List<Document> documents) {
@@ -115,9 +116,9 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    @Override
     public Schedule mapNsuToSchedule(Document document) {
         Schedule schedule = new Schedule();
+        lastTimeSheet = null;
 
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
@@ -144,8 +145,14 @@ public class MappingServiceImpl implements MappingService {
                                    DayOfWeek[] daysOfWeek) {
         Element timeCell = row.select("td").first();
         if (timeCell != null) {
-            String time = timeCell.text().trim();
-            TimeSheet timeSheet = new TimeSheet(time);
+            String timeText = timeCell.text().trim();
+            TimeSheet currentSheet = new TimeSheet(timeText);
+
+            if (lastTimeSheet != null) {
+                lastTimeSheet.setTo(currentSheet.getFrom());
+            }
+
+            lastTimeSheet = currentSheet;
 
             Elements dayCells = row.select("td:not(:first-child)");
             int dayIndex = 0;
@@ -155,21 +162,20 @@ public class MappingServiceImpl implements MappingService {
 
                 for (Element lessonCell : lessonCells) {
                     List<ScheduleObject> scheduleObjects = getNsuScheduleObjects(lessonCell);
-
                     String weekIndicator = lessonCell.select(".week").text().trim();
 
                     for (ScheduleObject scheduleObject : scheduleObjects) {
                         if (weekIndicator.isEmpty()) {
                             evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                             oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                         } else if (weekIndicator.equals("Четная")) {
                             evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                         } else if (weekIndicator.equals("Нечетная")) {
                             oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
                         }
                     }
                 }
