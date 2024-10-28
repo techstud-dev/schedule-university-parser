@@ -114,7 +114,7 @@ public class MappingServiceImpl implements MappingService {
     }
 
     @Override
-    public Schedule mapNsuToSchedule(Document document, boolean isEvenWeek) {
+    public Schedule mapNsuToSchedule(Document document) {
         Schedule schedule = new Schedule();
 
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
@@ -129,7 +129,7 @@ public class MappingServiceImpl implements MappingService {
         Elements rows = document.select("table.time-table tbody tr");
 
         for (Element row : rows) {
-            getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, isEvenWeek, daysOfWeek);
+            getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek);
         }
 
         schedule.setEvenWeekSchedule(evenWeekSchedule);
@@ -139,7 +139,7 @@ public class MappingServiceImpl implements MappingService {
 
     private void getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
                                    Map<DayOfWeek, ScheduleDay> oddWeekSchedule,
-                                   boolean isEvenWeek, DayOfWeek[] daysOfWeek) {
+                                   DayOfWeek[] daysOfWeek) {
         Element timeCell = row.select("td").first();
         if (timeCell != null) {
             String time = timeCell.text().trim();

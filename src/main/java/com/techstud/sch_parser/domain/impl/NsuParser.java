@@ -39,7 +39,6 @@ public class NsuParser implements Parser {
 
         log.info("Detected week type: " + (isEvenWeek ? "Чётная" : "Нечётная"));
 
-        Schedule schedule = mappingService.mapNsuToSchedule(doc, isEvenWeek);
-        return schedule;
+        return mappingService.mapNsuToSchedule(doc);
     }
 }
