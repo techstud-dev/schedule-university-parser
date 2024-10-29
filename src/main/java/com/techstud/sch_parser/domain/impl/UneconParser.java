@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.MessageFormat;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -25,14 +26,13 @@ public class UneconParser implements Parser {
     public Schedule parseSchedule(String groupId) throws Exception {
         String apiRequest = "https://rasp.unecon.ru/raspisanie_grp.php?g={0}&w={1}";
 
-        int currentWeek = calculateWeekParameter(LocalDate.now());
-        int nextWeek = currentWeek + 1;
+        String[] weekNumbers = getCurrentWeekNumbers();
 
-        log.info("Current week: {}", currentWeek);
-        log.info("Next week: {}", nextWeek);
+        String currentWeekUrl = MessageFormat.format(apiRequest, groupId, weekNumbers[0]);
+        String nextWeekUrl = MessageFormat.format(apiRequest, groupId, weekNumbers[1]);
 
-        String currentWeekUrl = MessageFormat.format(apiRequest, groupId, currentWeek);
-        String nextWeekUrl = MessageFormat.format(apiRequest, groupId, nextWeek);
+        log.info("Current week: {}", currentWeekUrl);
+        log.info("Next week: {}", nextWeekUrl);
 
         Document currentWeekDoc = Jsoup.connect(currentWeekUrl).get();
         Document nextWeekDoc = Jsoup.connect(nextWeekUrl).get();
@@ -40,13 +40,26 @@ public class UneconParser implements Parser {
         return mappingService.mapUneconToSchedule(List.of(currentWeekDoc, nextWeekDoc));
     }
 
-    private int calculateWeekParameter(LocalDate date) {
-        LocalDate knownEvenWeekDate = LocalDate.of(2024, 10, 28);
+    private String[] getCurrentWeekNumbers() {
+        LocalDate startSemesterDate = LocalDate.of(2024, Month.SEPTEMBER, 2);
+        LocalDate currentDate = LocalDate.now();
 
-        long daysBetween = ChronoUnit.DAYS.between(knownEvenWeekDate, date);
+        if (currentDate.isBefore(startSemesterDate)) {
+            return new String[]{"0", "0"};
+        }
 
+        long daysBetween = ChronoUnit.DAYS.between(startSemesterDate, currentDate);
         long weeksBetween = daysBetween / 7;
+        int currentWeek = (int) weeksBetween + 1;
 
-        return (int) weeksBetween + 10;
+        if (daysBetween % 7 != 0) {
+            currentWeek += 1;
+        }
+
+        if (currentWeek % 2 == 0) {
+            return new String[]{String.valueOf(currentWeek), String.valueOf(currentWeek + 1)};
+        } else {
+            return new String[]{String.valueOf(currentWeek - 1), String.valueOf(currentWeek)};
+        }
     }
 }
