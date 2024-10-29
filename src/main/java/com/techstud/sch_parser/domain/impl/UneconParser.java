@@ -15,7 +15,7 @@ import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-@Component
+@Component("UNECON")
 @Slf4j
 @RequiredArgsConstructor
 public class UneconParser implements Parser {
