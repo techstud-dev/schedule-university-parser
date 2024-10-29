@@ -1,6 +1,7 @@
 package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.TltsuParser;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -21,7 +22,9 @@ public class TltsuParserTest {
 
     @Test
     public void testParseSchedule() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("31790");
         Parser parser = new TltsuParser(mappingService, closeableHttpClient);
-        System.out.println(parser.parseSchedule("31790"));
+        System.out.println(parser.parseSchedule(parsingTask));
     }
 }

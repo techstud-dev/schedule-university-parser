@@ -2,6 +2,7 @@ package com.techstud.sch_parser.domain.impl;
 
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,15 +14,15 @@ import org.springframework.stereotype.Component;
 import java.text.MessageFormat;
 
 @Slf4j
-@Component
+@Component("NSU")
 @RequiredArgsConstructor
 public class NsuParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(String groupId) throws Exception {
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
         String baseUrl = "https://table.nsu.ru/group/{0}";
-        String url = MessageFormat.format(baseUrl, groupId);
+        String url = MessageFormat.format(baseUrl, task.getGroupId());
 
         log.info("Parsing URL: " + url);
 

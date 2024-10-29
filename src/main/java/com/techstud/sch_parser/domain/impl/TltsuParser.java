@@ -6,6 +6,7 @@ import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.tltsu.TltsuApiResponse;
 import com.techstud.sch_parser.model.api.response.tltsu.TltsuSchedule;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
-@Component
+@Component("TLTSU")
 @RequiredArgsConstructor
 @Slf4j
 public class TltsuParser implements Parser {
@@ -35,12 +36,12 @@ public class TltsuParser implements Parser {
     private final CloseableHttpClient httpClient;
 
     @Override
-    public Schedule parseSchedule(String groupId) throws Exception {
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
         String[] dates = getRequestDates();
         log.info(Arrays.toString(dates));
         String genericUrl = "https://its.tltsu.ru/api/schedule/group?groupId={0}&fromDate={1}&toDate={2}";
-        String oddUrl = MessageFormat.format(genericUrl, groupId, dates[0], dates[1]);
-        String evenUrl = MessageFormat.format(genericUrl, groupId, dates[2], dates[3]);
+        String oddUrl = MessageFormat.format(genericUrl, task.getGroupId(), dates[0], dates[1]);
+        String evenUrl = MessageFormat.format(genericUrl, task.getGroupId(), dates[2], dates[3]);
 
         log.info(oddUrl);
         log.info(evenUrl);

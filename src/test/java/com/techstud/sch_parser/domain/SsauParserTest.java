@@ -2,6 +2,7 @@ package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.SsauParser;
 import com.techstud.sch_parser.model.Schedule;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import lombok.extern.log4j.Log4j2;
@@ -24,27 +25,33 @@ public class SsauParserTest {
 
     @Test
     public void checkReturnCorrectTimetableMastersEighteenHoursEven() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("531075164");
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
-                underTest.parseSchedule("531075164"));
+                underTest.parseSchedule(parsingTask));
         log.info(result);
         assertThat(result).isNotEmpty();
     }
 
     @Test
     public void checkReturnCorrectTimetableBachelorEighteenHours() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("1274100747");
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
-                underTest.parseSchedule("1274100747"));
+                underTest.parseSchedule(parsingTask));
         log.info(result);
         assertThat(result).isNotNull();
     }
 
     @Test
     public void checkReturnCorrectTimetableBachelorEighteenAndEleventhHoursEven() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("531052818");
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
-                underTest.parseSchedule("531052818"));
+                underTest.parseSchedule(parsingTask));
         log.info(result);
         assertThat(result).isNotNull();
     }

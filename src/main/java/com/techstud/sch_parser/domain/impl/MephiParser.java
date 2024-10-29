@@ -2,6 +2,7 @@ package com.techstud.sch_parser.domain.impl;
 
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-@Component
+@Component("MEPHI")
 @Slf4j
 @RequiredArgsConstructor
 public class MephiParser implements Parser {
@@ -23,10 +24,10 @@ public class MephiParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(String groupId) throws Exception {
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
         String[] parseWeeks = getCurrentWeekNumbers(TimeZone.getTimeZone("Europe/Moscow"));
-        final String[] evenParameters = {String.valueOf(groupId), parseWeeks[0]};
-        final String[] oddParameters = {String.valueOf(groupId), parseWeeks[1]};
+        final String[] evenParameters = {String.valueOf(task.getGroupId()), parseWeeks[0]};
+        final String[] oddParameters = {String.valueOf(task.getGroupId()), parseWeeks[1]};
 
         String mephiScheduleUrl = "https://home.mephi.ru/study_groups/{0}/schedule?period={1}";
 

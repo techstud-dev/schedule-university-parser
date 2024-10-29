@@ -2,6 +2,7 @@ package com.techstud.sch_parser.domain.impl;
 
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-@Component
+@Component("SSAU")
 @Slf4j
 @RequiredArgsConstructor
 public class SsauParser implements Parser {
@@ -24,10 +25,10 @@ public class SsauParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(String groupId) throws IOException {
+    public Schedule parseSchedule(ParsingTask task) throws IOException {
         String[] parseWeeks = getCurrentWeekNumbers(TimeZone.getTimeZone("Europe/Samara"));
-        final String[] evenParameters = {String.valueOf(groupId), parseWeeks[0]};
-        final String[] oddParameters = {String.valueOf(groupId), parseWeeks[1]};
+        final String[] evenParameters = {String.valueOf(task.getGroupId()), parseWeeks[0]};
+        final String[] oddParameters = {String.valueOf(task.getGroupId()), parseWeeks[1]};
 
         String samaraUniversityScheduleUrl = "https://ssau.ru/rasp?groupId={0}&selectedWeek={1}";
 

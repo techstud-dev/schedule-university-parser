@@ -1,6 +1,7 @@
 package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.MephiParser;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -17,35 +18,44 @@ public class MephiParserTest {
         mappingService = new MappingServiceImpl();
     }
 
-     // ТУТ 5 ГРУПП 5 РАЗНЫХ КУРСОВ, ОНИ ОБОЗНАЧЕНЫ ПО НОМЕРУ (1, 2, 3, 4, 5)
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure1() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("19468");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(String.valueOf(19468)));
+        System.out.println(underTest.parseSchedule(parsingTask));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure2() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("19389");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(String.valueOf(19389)));
+        System.out.println(underTest.parseSchedule(parsingTask));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure3() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("19323");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(String.valueOf(19323)));
+        System.out.println(underTest.parseSchedule(parsingTask));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure4() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("19267");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(String.valueOf(19267)));
+        System.out.println(underTest.parseSchedule(parsingTask));
     }
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure5() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("19266");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(String.valueOf(19266)));
+        System.out.println(underTest.parseSchedule(parsingTask));
     }
 }

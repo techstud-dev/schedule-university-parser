@@ -1,6 +1,7 @@
 package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.SseuParser;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -21,7 +22,9 @@ public class SseuParserTest {
 
     @Test
     public void parseScheduleTest() throws Exception {
+        ParsingTask parsingTask = new ParsingTask();
+        parsingTask.setGroupId("804");
         Parser parser = new SseuParser(closeableHttpClient, mappingService);
-        System.out.println(parser.parseSchedule("804"));
+        System.out.println(parser.parseSchedule(parsingTask));
     }
 }

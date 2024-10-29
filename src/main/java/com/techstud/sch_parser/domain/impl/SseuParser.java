@@ -5,6 +5,7 @@ import com.techstud.sch_parser.annotation.Profiling;
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -21,7 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RequiredArgsConstructor
-@Component
+@Component("SSEU")
 public class SseuParser implements Parser {
     private final String apiUrl = "https://lms3.sseu.ru/api/v1/schedule-board/by-group?groupId={0}&scheduleWeek={1}&date={2}";
 
@@ -31,7 +32,7 @@ public class SseuParser implements Parser {
 
     @Override
     @Profiling
-    public Schedule parseSchedule(String groupId) throws Exception {
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
 
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -39,8 +40,8 @@ public class SseuParser implements Parser {
         String[] currentWeekUrlParams;
         String[] nextWeekUrlParams;
 
-        currentWeekUrlParams = new String[]{groupId.toString(), "CURRENT", formattedDate};
-        nextWeekUrlParams = new String[]{groupId.toString(), "NEXT", formattedDate};
+        currentWeekUrlParams = new String[]{task.getGroupId(), "CURRENT", formattedDate};
+        nextWeekUrlParams = new String[]{task.getGroupId(), "NEXT", formattedDate};
 
         String currentWeekUrl = MessageFormat.format(apiUrl,  currentWeekUrlParams[0], currentWeekUrlParams[1],  currentWeekUrlParams[2]);
         String nextWeekUrl = MessageFormat.format(apiUrl, nextWeekUrlParams[0], nextWeekUrlParams[1], nextWeekUrlParams[2]);

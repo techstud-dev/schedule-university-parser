@@ -1,5 +1,7 @@
 package com.techstud.sch_parser.configuration;
 
+import com.techstud.sch_parser.handler.GlobalExceptionHandler;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -11,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +22,7 @@ import java.util.Map;
 @Configuration
 @EnableKafka
 @Slf4j
+@RequiredArgsConstructor
 public class KafkaConfiguration {
 
     @Value("${spring.kafka.bootstrap-servers}")
@@ -47,6 +52,11 @@ public class KafkaConfiguration {
     @Value("${spring.kafka.ssl.trust-store-type}")
     private String trustStoreType;
 
+    @Value("${kafka.topic.parsing-failure}")
+    private String errorTopic;
+
+    private final GlobalExceptionHandler globalExceptionHandler;
+
     @Bean
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
@@ -74,10 +84,20 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(KafkaTemplate<String, String> kafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
+        factory.setCommonErrorHandler(errorHandler(kafkaTemplate));
         return factory;
+    }
+
+    public DefaultErrorHandler errorHandler(KafkaTemplate<String, String> kafkaTemplate) {
+        FixedBackOff fixedBackOff = new FixedBackOff(1000L, 0);
+        return new DefaultErrorHandler((record, exception) -> {
+            String errorResponse = globalExceptionHandler.handleException(record, exception);
+            kafkaTemplate.send(errorTopic, errorResponse);
+        }, fixedBackOff);
     }
 
     private void configureSsl(Map<String, Object> configProps) {

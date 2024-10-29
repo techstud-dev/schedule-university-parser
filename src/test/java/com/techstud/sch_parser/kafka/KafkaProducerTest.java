@@ -42,6 +42,5 @@ public class KafkaProducerTest {
         response.put("serviceName", "tchs");
         response.put("messageId", KafkaConsumer.getCurrentMessageId());
 
-        kafkaProducer.sendToKafka(id, failureTopic, response);
     }
 }

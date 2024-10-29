@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.text.MessageFormat;
 
-@Component
+@Component("BMSTU")
 @RequiredArgsConstructor
 @Slf4j
 public class BmstuParser implements Parser {
@@ -28,8 +29,8 @@ public class BmstuParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(String groupId) throws Exception {
-        String[] urlParams = new String[]{groupId};
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
+        String[] urlParams = new String[]{task.getGroupId()};
         String url = MessageFormat.format(apiUrl, urlParams[0]);
         HttpGet getScheduleRequest = new HttpGet(url);
         String scheduleJson = getSchduleJsonAsString(getScheduleRequest);

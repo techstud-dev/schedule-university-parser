@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,22 @@ public class KafkaProducer {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void sendToKafka(String id, String topic, Object objectMessage) {
+    @Value("${kafka.topic.parsing-result}")
+    private String completeTopic;
+
+    @Value("${kafka.topic.parsing-failure}")
+    private String failureTopic;
+
+    public void sendSuccess(String id, Object objectMessage) {
+
+        sendToKafka(id, completeTopic, objectMessage);
+    }
+
+    public void sendFailure(String id, Object objectMessage) {
+        sendToKafka(id, failureTopic, objectMessage);
+    }
+
+    private void sendToKafka(String id, String topic, Object objectMessage) {
         String parserResultAsString;
 
         try {

@@ -2,6 +2,7 @@ package com.techstud.sch_parser.domain.impl;
 
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
+import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +24,13 @@ public class UneconParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    public Schedule parseSchedule(String groupId) throws Exception {
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
         String apiRequest = "https://rasp.unecon.ru/raspisanie_grp.php?g={0}&w={1}";
 
         String[] weekNumbers = getCurrentWeekNumbers();
 
-        String currentWeekUrl = MessageFormat.format(apiRequest, groupId, weekNumbers[0]);
-        String nextWeekUrl = MessageFormat.format(apiRequest, groupId, weekNumbers[1]);
+        String currentWeekUrl = MessageFormat.format(apiRequest, task.getGroupId(), weekNumbers[0]);
+        String nextWeekUrl = MessageFormat.format(apiRequest, task.getGroupId(), weekNumbers[1]);
 
         log.info("Current week: {}", currentWeekUrl);
         log.info("Next week: {}", nextWeekUrl);
