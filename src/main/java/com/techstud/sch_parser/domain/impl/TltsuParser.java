@@ -38,16 +38,14 @@ public class TltsuParser implements Parser {
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
         String[] dates = getRequestDates();
-        log.info(Arrays.toString(dates));
         String genericUrl = "https://its.tltsu.ru/api/schedule/group?groupId={0}&fromDate={1}&toDate={2}";
         String oddUrl = MessageFormat.format(genericUrl, task.getGroupId(), dates[0], dates[1]);
         String evenUrl = MessageFormat.format(genericUrl, task.getGroupId(), dates[2], dates[3]);
 
-        log.info(oddUrl);
-        log.info(evenUrl);
         HttpGet getOddRequest = new HttpGet(oddUrl);
         HttpGet getEvenRequest = new HttpGet(evenUrl);
 
+        log.info("Connect to TLTSU API: evenUrl: {}, oddEven: {}",  getEvenRequest, getOddRequest);
         String oddJson = getSchduleJsonAsString(getOddRequest);
         String evenJson = getSchduleJsonAsString(getEvenRequest);
 
@@ -58,8 +56,8 @@ public class TltsuParser implements Parser {
         TltsuApiResponse evenResponseApi = new TltsuApiResponse();
         oddResponseApi.setSchedules(oddResponse);
         evenResponseApi.setSchedules(evenResponse);
-        log.info(oddResponseApi.toString());
-        log.info(evenResponseApi.toString());
+
+        log.info("Successfully parsing data from TLTSU API");
         return mappingService.mapTltsuToSchedule(List.of(oddResponseApi, evenResponseApi));
     }
 

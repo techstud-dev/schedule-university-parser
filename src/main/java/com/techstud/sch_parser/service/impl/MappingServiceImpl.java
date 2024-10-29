@@ -38,6 +38,7 @@ public class MappingServiceImpl implements MappingService {
 
     @Override
     public Schedule mapMephiToSchedule(List<Document> documents) {
+        log.info("Start mapping MEPHI data to schedule");
         if (documents.size() < 2) {
             throw new IllegalArgumentException("Not enough elements for even and odd documents");
         }
@@ -53,11 +54,13 @@ public class MappingServiceImpl implements MappingService {
         schedule.setOddWeekSchedule(oddWeekSchedule);
         schedule.setSnapshotDate(new Date());
 
+        log.info("Mapping MEPHI data to schedule {} finished", schedule);
         return schedule;
     }
 
     @Override
     public Schedule mapSseuToSchedule(List<SseuApiResponse> weekSseuSchedules) {
+        log.info("Start mapping SSEU data to schedule");
         SseuApiResponse oddWeekSseuSchedule = weekSseuSchedules.get(0).getWeek().equals("ODD") ? weekSseuSchedules.get(0) : weekSseuSchedules.get(1);
         SseuApiResponse evenWeekSseuSchedule = weekSseuSchedules.get(0).getWeek().equals("EVEN") ? weekSseuSchedules.get(0) : weekSseuSchedules.get(1);
         Schedule schedule = new Schedule();
@@ -71,11 +74,13 @@ public class MappingServiceImpl implements MappingService {
         schedule.setSnapshotDate(new Date());
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
+        log.info("Mapping SSEU data to schedule {} finished", schedule);
         return schedule;
     }
 
     @Override
     public Schedule mapSsauToSchedule(List<Document> documents) {
+        log.info("Start mapping SSAU data to schedule");
         Element evenElement = documents.get(0)
                 .getElementsByClass("schedule")
                 .first();
@@ -90,11 +95,13 @@ public class MappingServiceImpl implements MappingService {
         schedule.setEvenWeekSchedule(evenSchedule);
         schedule.setOddWeekSchedule(oddSchedule);
         schedule.setSnapshotDate(new Date());
+        log.info("Mapping SSAU data to schedule {} finished", schedule);
         return schedule;
     }
 
     @Override
     public Schedule mapBmstuToSchedule(BmstuApiResponse bmstuApiResponse) {
+        log.info("Start mapping BMSTU data to schedule");
         Schedule schedule = new Schedule();
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
@@ -116,11 +123,13 @@ public class MappingServiceImpl implements MappingService {
 
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
+        log.info("Mapping BMSTU data to schedule {} finished", schedule);
         return schedule;
     }
 
     @Override
     public Schedule mapNsuToSchedule(Document document) {
+        log.info("Start mapping NSU data to schedule");
         Schedule schedule = new Schedule();
         TimeSheet lastTimeSheet = null;
 
@@ -141,11 +150,13 @@ public class MappingServiceImpl implements MappingService {
 
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
+        log.info("Mapping NSU data to schedule {} finished", schedule);
         return schedule;
     }
 
     @Override
     public Schedule mapUneconToSchedule(List<Document> documents) {
+        log.info("Start mapping UNECON data to schedule");
         Schedule schedule = new Schedule();
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
@@ -187,6 +198,7 @@ public class MappingServiceImpl implements MappingService {
 
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
+        log.info("Mapping UNECON data to schedule {} finished", schedule);
         return schedule;
     }
 
@@ -273,8 +285,8 @@ public class MappingServiceImpl implements MappingService {
     }
 
     private TimeSheet getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
-                                   Map<DayOfWeek, ScheduleDay> oddWeekSchedule,
-                                   DayOfWeek[] daysOfWeek, TimeSheet lastTimeSheet) {
+                                        Map<DayOfWeek, ScheduleDay> oddWeekSchedule,
+                                        DayOfWeek[] daysOfWeek, TimeSheet lastTimeSheet) {
         Element timeCell = row.select("td").first();
         if (timeCell != null) {
             String timeText = timeCell.text().trim();

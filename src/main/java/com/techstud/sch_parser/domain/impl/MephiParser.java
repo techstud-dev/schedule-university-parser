@@ -34,12 +34,12 @@ public class MephiParser implements Parser {
         final String evenUrl = MessageFormat.format(mephiScheduleUrl, evenParameters[0], evenParameters[1]);
         final String oddUrl = MessageFormat.format(mephiScheduleUrl, oddParameters[0], oddParameters[1]);
 
-        log.info("Even week URL: " + evenUrl);
-        log.info("Odd week URL: " + oddUrl);
+        log.info("Connect to MEPHI API: evenUrl: {}, oddEven: {}", evenUrl, oddUrl);
 
         Document evenDoc = Jsoup.connect(evenUrl).get();
         Document oddDoc = Jsoup.connect(oddUrl).get();
 
+        log.info("Successfully parsing data from MEPHI API");
         return mappingService.mapMephiToSchedule(List.of(evenDoc, oddDoc));
     }
 

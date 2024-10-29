@@ -22,8 +22,6 @@ import java.text.MessageFormat;
 @Slf4j
 public class BmstuParser implements Parser {
 
-    private final String apiUrl = "https://lks.bmstu.ru/lks-back/api/v1/schedules/groups/{0}/public";
-
     private final CloseableHttpClient httpClient;
 
     private final MappingService mappingService;
@@ -31,12 +29,14 @@ public class BmstuParser implements Parser {
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
         String[] urlParams = new String[]{task.getGroupId()};
+        String apiUrl = "https://lks.bmstu.ru/lks-back/api/v1/schedules/groups/{0}/public";
         String url = MessageFormat.format(apiUrl, urlParams[0]);
         HttpGet getScheduleRequest = new HttpGet(url);
+        log.info("Connect to BMSTU API: {}", getScheduleRequest);
         String scheduleJson = getSchduleJsonAsString(getScheduleRequest);
         ObjectMapper objectMapper = new ObjectMapper();
         BmstuApiResponse bmstuApiResponse = objectMapper.readValue(scheduleJson, BmstuApiResponse.class);
-        log.info(bmstuApiResponse.toString());
+        log.info("Successfully parsing data from BMSTU API");
         return mappingService.mapBmstuToSchedule(bmstuApiResponse);
     }
 

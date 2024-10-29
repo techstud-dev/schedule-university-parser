@@ -34,10 +34,11 @@ public class SsauParser implements Parser {
 
         final String evenUrl = MessageFormat.format(samaraUniversityScheduleUrl, evenParameters[0], evenParameters[1]);
         final String oddUrl = MessageFormat.format(samaraUniversityScheduleUrl, oddParameters[0], oddParameters[1]);
+        log.info("Connect to SSAU API: evenUrl: {}, oddEven: {}", evenUrl, oddUrl);
         Document evenDoc = Jsoup.connect(evenUrl).userAgent(userAgent).referrer(referrer).get();
 
         Document oddDoc = Jsoup.connect(oddUrl).userAgent(userAgent).referrer(referrer).get();
-
+        log.info("Successfully parsing data from SSAU API");
         return mappingService.mapSsauToSchedule(List.of(evenDoc, oddDoc));
     }
 

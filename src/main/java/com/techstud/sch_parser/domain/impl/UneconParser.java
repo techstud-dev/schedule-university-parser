@@ -32,12 +32,12 @@ public class UneconParser implements Parser {
         String currentWeekUrl = MessageFormat.format(apiRequest, task.getGroupId(), weekNumbers[0]);
         String nextWeekUrl = MessageFormat.format(apiRequest, task.getGroupId(), weekNumbers[1]);
 
-        log.info("Current week: {}", currentWeekUrl);
-        log.info("Next week: {}", nextWeekUrl);
+        log.info("Connect to UNECON API: currentWeek: {}, nextWeek: {}",  currentWeekUrl, nextWeekUrl);
 
         Document currentWeekDoc = Jsoup.connect(currentWeekUrl).get();
         Document nextWeekDoc = Jsoup.connect(nextWeekUrl).get();
 
+        log.info("Successfully parsing data from UNECON API");
         return mappingService.mapUneconToSchedule(List.of(currentWeekDoc, nextWeekDoc));
     }
 
