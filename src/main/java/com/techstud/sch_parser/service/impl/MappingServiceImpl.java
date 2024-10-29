@@ -23,10 +23,14 @@ import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticParseDayOfWeek;
+import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticUneconParseDayOfWeek;
 
 @Service
 @Slf4j
@@ -138,6 +142,134 @@ public class MappingServiceImpl implements MappingService {
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         schedule.setOddWeekSchedule(oddWeekSchedule);
         return schedule;
+    }
+
+    @Override
+    public Schedule mapUneconToSchedule(List<Document> documents) {
+        Schedule schedule = new Schedule();
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
+
+        for (Document document : documents) {
+            if (document == null) {
+                log.warn("Document is empty");
+                continue;
+            }
+
+            Elements elements = document.select("table tbody tr");
+            log.info("Found elements: {}", elements.size());
+
+            DayOfWeek currentDayOfWeek;
+            ScheduleDay evenWeekDay = null;
+            ScheduleDay oddWeekDay = null;
+
+            for (Element row : elements) {
+                if (row.hasClass("new_day_border")) {
+                    Element nextRow = row.nextElementSibling();
+                    if (nextRow != null && nextRow.hasClass("new_day")) {
+                        String dayText = nextRow.select(".day").text().trim();
+
+                        try {
+                            currentDayOfWeek = staticUneconParseDayOfWeek(dayText);
+                            evenWeekDay = new ScheduleDay();
+                            oddWeekDay = new ScheduleDay();
+                            evenWeekSchedule.put(currentDayOfWeek, evenWeekDay);
+                            oddWeekSchedule.put(currentDayOfWeek, oddWeekDay);
+                        } catch (IllegalArgumentException e) {
+                            log.error("Error while parsing day of week: {}", dayText, e);
+                        }
+                    }
+                } else if (evenWeekDay != null && oddWeekDay != null) {
+                    getUneconScheduleDay(row, evenWeekDay, oddWeekDay);
+                }
+            }
+        }
+
+        schedule.setEvenWeekSchedule(evenWeekSchedule);
+        schedule.setOddWeekSchedule(oddWeekSchedule);
+        return schedule;
+    }
+
+    private void getUneconScheduleDay(Element element, ScheduleDay evenWeekDay, ScheduleDay oddWeekDay) {
+        TimeSheet timeSheet = parseUneconTimeSheet(element);
+        if (timeSheet == null) {
+            log.warn("Cant process timesheet in the element: {}", element);
+            return;
+        }
+
+        Map<TimeSheet, List<ScheduleObject>> evenLessons = evenWeekDay.getLessons();
+        Map<TimeSheet, List<ScheduleObject>> oddLessons = oddWeekDay.getLessons();
+
+        evenLessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseScheduleObject(element));
+        oddLessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseScheduleObject(element));
+    }
+
+    private TimeSheet parseUneconTimeSheet(Element element) {
+        Element timeCell = element.select(".no_480.time .time").first();
+        if (timeCell == null) {
+            log.warn("Didnt found element in: {}", element);
+            return null;
+        }
+
+        String timeText = timeCell.text().trim();
+
+        try {
+            String[] times = timeText.split(" - ");
+            LocalTime fromTime = LocalTime.parse(times[0].trim(), DateTimeFormatter.ofPattern("HH:mm"));
+            LocalTime toTime = LocalTime.parse(times[1].trim(), DateTimeFormatter.ofPattern("HH:mm"));
+
+            return new TimeSheet(fromTime, toTime);
+        } catch (DateTimeParseException e) {
+            log.error("Error while parsing timesheet: {}", timeText, e);
+            return null;
+        }
+    }
+
+    private List<ScheduleObject> parseScheduleObject(Element element) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
+
+        String name = element.select(".predmet .predmet").text();
+        List<String> types = new ArrayList<>();
+
+        Matcher typeMatcher = Pattern.compile("\\s*\\((.*?)\\)").matcher(name);
+
+        while (typeMatcher.find()) {
+            types.add(typeMatcher.group(1));
+        }
+
+        for (String type : types) {
+            name = name.replace(" (" + type + ")", "").replace("(" + type + ")", "").trim();
+        }
+
+        String teacher = element.select(".predmet .prepod a").text();
+        String place = element.select(".predmet .aud").text();
+        place = place.replace("ПОКАЗАТЬ НА СХЕМЕ ", "").trim();
+
+
+        ScheduleObject scheduleObject = new ScheduleObject();
+
+        if (teacher.isEmpty()) {
+            scheduleObject.setTeacher(null);
+        } else {
+            scheduleObject.setTeacher(teacher);
+        }
+
+        scheduleObject.setName(name);
+        scheduleObject.setPlace(place);
+
+        for (String type : types) {
+            ScheduleType lessonType = ScheduleType.returnTypeByRuName(type.trim());
+            if (lessonType != ScheduleType.UNKNOWN) {
+                scheduleObject.setType(lessonType);
+                break;
+            }
+        }
+        if (scheduleObject.getType() == null) {
+            scheduleObject.setType(ScheduleType.UNKNOWN);
+        }
+
+        scheduleObjects.add(scheduleObject);
+        return scheduleObjects;
     }
 
     private TimeSheet getNsuScheduleDay(Element row, Map<DayOfWeek, ScheduleDay> evenWeekSchedule,
