@@ -1,12 +1,11 @@
 package com.techstud.sch_parser.domain;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.techstud.sch_parser.handler.GlobalExceptionHandler;
 import com.techstud.sch_parser.kafka.KafkaProducer;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,9 +16,10 @@ public class ParserFacade {
     private final ParserFactory parserFactory;
     private final KafkaProducer kafkaProducer;
 
+    @Async("taskExecutor")
     public void parseSchedule(String messageKey, ParsingTask task) throws Exception {
         Parser parser = parserFactory.getParser(task);
-            Schedule schedule = parser.parseSchedule(task);
-            kafkaProducer.sendSuccess(messageKey, schedule);
+        Schedule schedule = parser.parseSchedule(task);
+        kafkaProducer.sendSuccess(messageKey, schedule);
     }
 }
