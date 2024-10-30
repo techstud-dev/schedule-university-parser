@@ -18,6 +18,7 @@ public class ParserFacade {
 
     @Async("taskExecutor")
     public void parseSchedule(String messageKey, ParsingTask task) throws Exception {
+        log.info("Received task: {}", task);
         Parser parser = parserFactory.getParser(task);
         Schedule schedule = parser.parseSchedule(task);
         kafkaProducer.sendSuccess(messageKey, schedule);

@@ -8,6 +8,7 @@ import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -23,6 +24,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Component("SSEU")
+@Slf4j
 public class SseuParser implements Parser {
     private final String apiUrl = "https://lms3.sseu.ru/api/v1/schedule-board/by-group?groupId={0}&scheduleWeek={1}&date={2}";
 
@@ -31,7 +33,6 @@ public class SseuParser implements Parser {
     private final MappingService mappingService;
 
     @Override
-    @Profiling
     public Schedule parseSchedule(ParsingTask task) throws Exception {
 
         LocalDate currentDate = LocalDate.now();
@@ -48,12 +49,13 @@ public class SseuParser implements Parser {
 
         HttpGet getOddRequest = new HttpGet(currentWeekUrl);
         HttpGet getEvenRequest = new HttpGet(nextWeekUrl);
-
+        log.info("Connect to SSEU API: evenUrl: {}, oddEven: {}",  getEvenRequest, getOddRequest);
         ObjectMapper mapper = new ObjectMapper();
         SseuApiResponse currentWeekResponse = mapper.readValue(getSchduleJsonAsString(getOddRequest), SseuApiResponse.class);
         SseuApiResponse nextWeekResponse = mapper.readValue(getSchduleJsonAsString(getEvenRequest), SseuApiResponse.class);
         List<SseuApiResponse> sseuApiResponseList = List.of(currentWeekResponse, nextWeekResponse);
 
+        log.info("Successfully parsing data from SSEU API");
         return mappingService.mapSseuToSchedule(sseuApiResponseList);
     }
 

@@ -24,22 +24,15 @@ public class NsuParser implements Parser {
         String baseUrl = "https://table.nsu.ru/group/{0}";
         String url = MessageFormat.format(baseUrl, task.getGroupId());
 
-        log.info("Parsing URL: " + url);
+        log.info("Connect to NSU API: {}", url);
 
         Document doc = Jsoup.connect(url).get();
-
-        log.info("Document loaded");
-
         Element parityElement = doc.selectFirst("div.parity");
         if (parityElement == null) {
             throw new Exception("Не удалось найти информацию о четности недели на странице.");
         }
 
-        String parityText = parityElement.text();
-        boolean isEvenWeek = parityText.contains("Чётная");
-
-        log.info("Detected week type: " + (isEvenWeek ? "Чётная" : "Нечётная"));
-
+        log.info("Successfully parsing data from NSU API");
         return mappingService.mapNsuToSchedule(doc);
     }
 }
