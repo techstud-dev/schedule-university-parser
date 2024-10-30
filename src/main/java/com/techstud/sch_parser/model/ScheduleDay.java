@@ -3,6 +3,7 @@ package com.techstud.sch_parser.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,7 +16,7 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ScheduleDay {
+public class ScheduleDay implements Serializable {
 
     private Date date;
 

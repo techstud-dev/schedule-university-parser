@@ -1,11 +1,12 @@
 package com.techstud.sch_parser.model;
 
+import java.io.Serializable;
 import java.time.DayOfWeek;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-public class ScheduleDayOfWeekParse {
+public class ScheduleDayOfWeekParse implements Serializable {
     public static DayOfWeek staticParseDayOfWeek(String dayName) {
         return switch (dayName.toLowerCase()) {
             case "понедельник" -> java.time.DayOfWeek.MONDAY;

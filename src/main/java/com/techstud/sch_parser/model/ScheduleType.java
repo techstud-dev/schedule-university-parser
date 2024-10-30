@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @AllArgsConstructor
 @NoArgsConstructor(force = true)
 @Getter
-public enum ScheduleType {
+public enum ScheduleType implements Serializable {
 
     LECTURE("Лекция"),
     PRACTICE("Практика"),

@@ -74,9 +74,9 @@ services:
       - "6380:6380"    # Порт для SSL
     volumes:
       - ./src/test/resources/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./src/test/resources/redis/redis-server.key:/certs/redis-server.key
+      - ./src/test/resources/redis/redis-server.crt:/certs/redis-server.crt
       - ./src/test/resources/redis/ca-cert.pem:/certs/ca-cert.pem
-      - ./src/test/resources/redis/redis-server-cert.pem:/certs/redis-server-cert.pem
-      - ./src/test/resources/redis/redis-server-key.pem:/certs/redis-server-key.pem
 
     environment:
       - REDIS_PASSWORD=password  # Пароль Redis для защиты подключения

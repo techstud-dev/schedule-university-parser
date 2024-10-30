@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -11,7 +12,7 @@ import java.time.format.DateTimeParseException;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TimeSheet {
+public class TimeSheet implements Serializable {
 
     private LocalTime from;
 
