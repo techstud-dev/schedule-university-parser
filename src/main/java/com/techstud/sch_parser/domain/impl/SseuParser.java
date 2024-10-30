@@ -1,7 +1,6 @@
 package com.techstud.sch_parser.domain.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techstud.sch_parser.annotation.Profiling;
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
@@ -13,7 +12,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -44,12 +42,12 @@ public class SseuParser implements Parser {
         currentWeekUrlParams = new String[]{task.getGroupId(), "CURRENT", formattedDate};
         nextWeekUrlParams = new String[]{task.getGroupId(), "NEXT", formattedDate};
 
-        String currentWeekUrl = MessageFormat.format(apiUrl,  currentWeekUrlParams[0], currentWeekUrlParams[1],  currentWeekUrlParams[2]);
+        String currentWeekUrl = MessageFormat.format(apiUrl, currentWeekUrlParams[0], currentWeekUrlParams[1], currentWeekUrlParams[2]);
         String nextWeekUrl = MessageFormat.format(apiUrl, nextWeekUrlParams[0], nextWeekUrlParams[1], nextWeekUrlParams[2]);
 
         HttpGet getOddRequest = new HttpGet(currentWeekUrl);
         HttpGet getEvenRequest = new HttpGet(nextWeekUrl);
-        log.info("Connect to SSEU API: evenUrl: {}, oddEven: {}",  getEvenRequest, getOddRequest);
+        log.info("Connect to SSEU API: evenUrl: {}, oddEven: {}", getEvenRequest, getOddRequest);
         ObjectMapper mapper = new ObjectMapper();
         SseuApiResponse currentWeekResponse = mapper.readValue(getSchduleJsonAsString(getOddRequest), SseuApiResponse.class);
         SseuApiResponse nextWeekResponse = mapper.readValue(getSchduleJsonAsString(getEvenRequest), SseuApiResponse.class);

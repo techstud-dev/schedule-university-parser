@@ -29,8 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticParseDayOfWeek;
-import static com.techstud.sch_parser.model.ScheduleDayOfWeekParse.staticUneconParseDayOfWeek;
+import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.staticParseDayOfWeek;
+import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.staticUneconParseDayOfWeek;
 
 @Service
 @Slf4j

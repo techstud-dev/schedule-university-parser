@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -45,13 +44,15 @@ public class TltsuParser implements Parser {
         HttpGet getOddRequest = new HttpGet(oddUrl);
         HttpGet getEvenRequest = new HttpGet(evenUrl);
 
-        log.info("Connect to TLTSU API: evenUrl: {}, oddEven: {}",  getEvenRequest, getOddRequest);
+        log.info("Connect to TLTSU API: evenUrl: {}, oddEven: {}", getEvenRequest, getOddRequest);
         String oddJson = getSchduleJsonAsString(getOddRequest);
         String evenJson = getSchduleJsonAsString(getEvenRequest);
 
         ObjectMapper mapper = new ObjectMapper();
-        List<TltsuSchedule> oddResponse = mapper.readValue(oddJson, new TypeReference<>() {});
-        List<TltsuSchedule> evenResponse = mapper.readValue(evenJson, new TypeReference<>() {});
+        List<TltsuSchedule> oddResponse = mapper.readValue(oddJson, new TypeReference<>() {
+        });
+        List<TltsuSchedule> evenResponse = mapper.readValue(evenJson, new TypeReference<>() {
+        });
         TltsuApiResponse oddResponseApi = new TltsuApiResponse();
         TltsuApiResponse evenResponseApi = new TltsuApiResponse();
         oddResponseApi.setSchedules(oddResponse);
@@ -81,7 +82,7 @@ public class TltsuParser implements Parser {
         String nextWeekDateEnd = formatterNext.format(nextWeekEnd);
 
         return Arrays.stream(new String[]{currentDateStart, currentDateEnd, nextWeekDateStart, nextWeekDateEnd})
-                .map(date -> date.replace("+04","Z")).toArray(String[]::new);
+                .map(date -> date.replace("+04", "Z")).toArray(String[]::new);
     }
 
     private String getSchduleJsonAsString(HttpGet getRequest) throws IOException {

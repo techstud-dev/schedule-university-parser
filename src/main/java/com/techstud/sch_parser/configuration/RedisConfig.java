@@ -18,16 +18,16 @@ import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 
 @Configuration
@@ -63,8 +63,6 @@ public class RedisConfig {
     private String keyStoreLocation;
 
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(60);
-
-
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {

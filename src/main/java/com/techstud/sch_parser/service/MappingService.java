@@ -10,11 +10,17 @@ import org.jsoup.nodes.Document;
 import java.util.List;
 
 public interface MappingService {
-    Schedule mapSseuToSchedule (List<SseuApiResponse> weekSseuSchedules);
-    Schedule mapSsauToSchedule (List<Document> documents);
-    Schedule mapMephiToSchedule (List<Document> documents);
-    Schedule mapBmstuToSchedule (BmstuApiResponse bmstuApiResponse);
-    Schedule mapNsuToSchedule (Document document);
+    Schedule mapSseuToSchedule(List<SseuApiResponse> weekSseuSchedules);
+
+    Schedule mapSsauToSchedule(List<Document> documents);
+
+    Schedule mapMephiToSchedule(List<Document> documents);
+
+    Schedule mapBmstuToSchedule(BmstuApiResponse bmstuApiResponse);
+
+    Schedule mapNsuToSchedule(Document document);
+
     Schedule mapUneconToSchedule(List<Document> documents);
-    Schedule mapTltsuToSchedule (List<TltsuApiResponse> documents) throws EmptyScheduleException;
+
+    Schedule mapTltsuToSchedule(List<TltsuApiResponse> documents) throws EmptyScheduleException;
 }

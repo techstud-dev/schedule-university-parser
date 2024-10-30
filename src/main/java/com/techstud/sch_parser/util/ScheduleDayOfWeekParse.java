@@ -1,9 +1,8 @@
-package com.techstud.sch_parser.model;
+package com.techstud.sch_parser.util;
 
 import java.io.Serializable;
 import java.time.DayOfWeek;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 public class ScheduleDayOfWeekParse implements Serializable {
@@ -46,9 +45,5 @@ public class ScheduleDayOfWeekParse implements Serializable {
                 DayOfWeek.SATURDAY,
                 DayOfWeek.SUNDAY
         );
-    }
-
-    public static Comparator<DayOfWeek> getDayOfWeekComparator() {
-        return Comparator.comparingInt(d -> returnListDayOfTheWeek().indexOf(d));
     }
 }
