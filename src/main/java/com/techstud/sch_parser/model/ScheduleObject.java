@@ -1,5 +1,6 @@
 package com.techstud.sch_parser.model;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;

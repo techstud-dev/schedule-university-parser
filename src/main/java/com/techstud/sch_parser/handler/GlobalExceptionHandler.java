@@ -1,6 +1,6 @@
 package com.techstud.sch_parser.handler;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techstud.sch_parser.kafka.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,13 +18,12 @@ public class GlobalExceptionHandler {
     @Value("${spring.application.systemName}")
     private String systemName;
 
-    public String handleException(ConsumerRecord<?, ?> record, Exception exception) {
+    public Map<String, String> handleException(String messageKey, Exception exception) {
         Map<String, String> response = new LinkedHashMap<>();
         response.put("systemName", systemName);
         response.put("serviceName", applicationName);
-        response.put("messageId", KafkaConsumer.getCurrentMessageId());
+        response.put("messageId", messageKey);
         response.put("message", exception.getMessage());
-        Gson gson = new Gson();
-        return gson.toJson(response);
+        return response;
     }
 }

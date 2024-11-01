@@ -1,6 +1,8 @@
 package com.techstud.sch_parser.configuration;
 
+import com.google.gson.Gson;
 import com.techstud.sch_parser.handler.GlobalExceptionHandler;
+import com.techstud.sch_parser.kafka.KafkaConsumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -95,7 +97,8 @@ public class KafkaConfiguration {
     public DefaultErrorHandler errorHandler(KafkaTemplate<String, String> kafkaTemplate) {
         FixedBackOff fixedBackOff = new FixedBackOff(1000L, 0);
         return new DefaultErrorHandler((record, exception) -> {
-            String errorResponse = globalExceptionHandler.handleException(record, exception);
+            Map<String, String> errorResponseMap = globalExceptionHandler.handleException(KafkaConsumer.getCurrentMessageId(), exception);
+            String errorResponse = new Gson().toJson(errorResponseMap);
             kafkaTemplate.send(errorTopic, errorResponse);
         }, fixedBackOff);
     }

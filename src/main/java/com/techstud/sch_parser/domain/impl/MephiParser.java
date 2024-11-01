@@ -39,7 +39,7 @@ public class MephiParser implements Parser {
         Document evenDoc = Jsoup.connect(evenUrl).get();
         Document oddDoc = Jsoup.connect(oddUrl).get();
 
-        log.info("Successfully parsing data from MEPHI API");
+        log.info("Successfully fetching data from MEPHI API");
         return mappingService.mapMephiToSchedule(List.of(evenDoc, oddDoc));
     }
 

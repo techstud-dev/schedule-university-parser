@@ -3,6 +3,7 @@ package com.techstud.sch_parser.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;

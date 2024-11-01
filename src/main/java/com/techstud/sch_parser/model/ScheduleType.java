@@ -32,4 +32,13 @@ public enum ScheduleType implements Serializable {
             default -> ScheduleType.UNKNOWN;
         };
     }
+
+    public static ScheduleType returnTypeByPgupsName(String pgupsName) {
+        return switch (pgupsName) {
+            case "Лекция" -> ScheduleType.LECTURE;
+            case "Практические занятия" -> ScheduleType.PRACTICE;
+            case "Лабораторные занятия" -> ScheduleType.LAB;
+            default -> ScheduleType.UNKNOWN;
+        };
+    }
 }

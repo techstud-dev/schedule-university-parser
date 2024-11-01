@@ -16,6 +16,7 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class ScheduleDay implements Serializable {
 
     private Date date;

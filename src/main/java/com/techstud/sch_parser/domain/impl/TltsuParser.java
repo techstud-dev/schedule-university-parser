@@ -58,7 +58,7 @@ public class TltsuParser implements Parser {
         oddResponseApi.setSchedules(oddResponse);
         evenResponseApi.setSchedules(evenResponse);
 
-        log.info("Successfully parsing data from TLTSU API");
+        log.info("Successfully fetching data from TLTSU API");
         return mappingService.mapTltsuToSchedule(List.of(oddResponseApi, evenResponseApi));
     }
 

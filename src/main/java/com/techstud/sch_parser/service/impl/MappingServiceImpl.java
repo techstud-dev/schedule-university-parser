@@ -202,6 +202,60 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
+    @Override
+    public Schedule mapPgupsToSchedule(List<Document> documents) {
+        log.info("Start mapping PGUPS data to schedule");
+
+        Schedule schedule = new Schedule();
+        schedule.setSnapshotDate(new Date());
+        schedule.setEvenWeekSchedule(parseSchedule(documents.get(0)));
+        schedule.setOddWeekSchedule(parseSchedule(documents.get(1)));
+
+        log.info("Mapping PGUPS data to schedule {} finished", schedule);
+        return schedule;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> parseSchedule(Document document) {
+        Map<DayOfWeek, ScheduleDay> schedule = new LinkedHashMap<>();
+        Elements scheduleDays = document.getElementsByTag("tbody");
+
+        scheduleDays.forEach(day -> {
+            DayOfWeek dayOfWeek = staticParseDayOfWeek(day.getElementsByClass("kt-font-dark").text().toLowerCase());
+            schedule.put(dayOfWeek, parseScheduleDay(day));
+        });
+
+        return schedule;
+    }
+
+    private ScheduleDay parseScheduleDay(Element dayElement) {
+        Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
+
+        dayElement.getElementsByTag("tr").forEach(lesson -> {
+            String[] timeRange = lesson.getElementsByClass("text-center kt-shape-font-color-4")
+                    .text()
+                    .split("—");
+            TimeSheet timeSheet = new TimeSheet(timeRange[0].trim(), timeRange[1].trim());
+            lessons.put(timeSheet, parseScheduleObjects(lesson));
+        });
+
+        ScheduleDay scheduleDay = new ScheduleDay();
+        scheduleDay.setLessons(lessons);
+        return scheduleDay;
+    }
+
+    private List<ScheduleObject> parseScheduleObjects(Element lesson) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
+
+        ScheduleObject scheduleObject = new ScheduleObject();
+        scheduleObject.setName(lesson.getElementsByClass("mr-1").text().trim());
+        scheduleObject.setPlace(lesson.select("a[href^=https://rasp.pgups.ru/schedule/room]").text().trim());
+        scheduleObject.setType(ScheduleType.returnTypeByPgupsName(lesson.select("span[class^=badge]").text().trim()));
+        scheduleObject.setTeacher(lesson.select("div > a[href^=https://rasp.pgups.ru/schedule/teacher].kt-link").text().trim());
+
+        scheduleObjects.add(scheduleObject);
+        return scheduleObjects;
+    }
+
     private void getUneconScheduleDay(Element element, ScheduleDay evenWeekDay, ScheduleDay oddWeekDay) {
         TimeSheet timeSheet = parseUneconTimeSheet(element);
         if (timeSheet == null) {
@@ -360,7 +414,7 @@ public class MappingServiceImpl implements MappingService {
         for (Element groupElement : groupList) {
             Elements timeElements = groupElement.select(".lesson-time");
 
-            String timeRange = timeElements.first().text();
+            String timeRange = Objects.requireNonNull(timeElements.first()).text();
             TimeSheet timeSheet = parseMephiTimeSheet(timeRange);
 
             List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
@@ -420,8 +474,7 @@ public class MappingServiceImpl implements MappingService {
         scheduleObject.setName(schedule.getDisciplineName());
         scheduleObject.setPlace(schedule.getClassroom().getName());
         if (schedule.getTeacher() != null) {
-            scheduleObject.setTeacher(schedule.getTeacher().getLastName() + " " + schedule.getTeacher().getName() + ""
-                    + schedule.getTeacher().getPatronymic());
+            scheduleObject.setTeacher(schedule.getTeacher().getLastName() + " " + schedule.getTeacher().getName() + schedule.getTeacher().getPatronymic());
         }
         scheduleObject.setGroups(schedule.getGroupsList()
                 .stream()

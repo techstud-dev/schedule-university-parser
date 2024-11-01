@@ -38,7 +38,7 @@ public class SsauParser implements Parser {
         Document evenDoc = Jsoup.connect(evenUrl).userAgent(userAgent).referrer(referrer).get();
 
         Document oddDoc = Jsoup.connect(oddUrl).userAgent(userAgent).referrer(referrer).get();
-        log.info("Successfully parsing data from SSAU API");
+        log.info("Successfully fetching data from SSAU API");
         return mappingService.mapSsauToSchedule(List.of(evenDoc, oddDoc));
     }
 
