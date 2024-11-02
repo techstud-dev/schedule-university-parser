@@ -708,7 +708,7 @@ public class MappingServiceImpl implements MappingService {
         return scheduleDay;
     }
 
-    public List<ScheduleObject> getSsauScheduleObject(Element element) {
+    private List<ScheduleObject> getSsauScheduleObject(Element element) {
         List<ScheduleObject> scheduleObjects = new ArrayList<>();
         List<Element> scheduleLessons = element.getElementsByClass("schedule__lesson");
         for (Element scheduleLesson : scheduleLessons) {
