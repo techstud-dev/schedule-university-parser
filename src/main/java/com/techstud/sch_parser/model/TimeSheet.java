@@ -1,6 +1,7 @@
 package com.techstud.sch_parser.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import java.time.format.DateTimeParseException;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class TimeSheet implements Serializable {
 
     private LocalTime from;

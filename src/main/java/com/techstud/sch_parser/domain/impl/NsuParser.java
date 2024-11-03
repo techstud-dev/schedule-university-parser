@@ -32,7 +32,7 @@ public class NsuParser implements Parser {
             throw new Exception("Не удалось найти информацию о четности недели на странице.");
         }
 
-        log.info("Successfully parsing data from NSU API");
+        log.info("Successfully fetching data from NSU API");
         return mappingService.mapNsuToSchedule(doc);
     }
 }

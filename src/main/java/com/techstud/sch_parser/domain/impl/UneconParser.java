@@ -37,7 +37,7 @@ public class UneconParser implements Parser {
         Document currentWeekDoc = Jsoup.connect(currentWeekUrl).get();
         Document nextWeekDoc = Jsoup.connect(nextWeekUrl).get();
 
-        log.info("Successfully parsing data from UNECON API");
+        log.info("Successfully fetching data from UNECON API");
         return mappingService.mapUneconToSchedule(List.of(currentWeekDoc, nextWeekDoc));
     }
 

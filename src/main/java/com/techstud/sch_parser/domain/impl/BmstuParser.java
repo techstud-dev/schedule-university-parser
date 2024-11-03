@@ -36,7 +36,7 @@ public class BmstuParser implements Parser {
         String scheduleJson = getSchduleJsonAsString(getScheduleRequest);
         ObjectMapper objectMapper = new ObjectMapper();
         BmstuApiResponse bmstuApiResponse = objectMapper.readValue(scheduleJson, BmstuApiResponse.class);
-        log.info("Successfully parsing data from BMSTU API");
+        log.info("Successfully fetching data from BMSTU API");
         return mappingService.mapBmstuToSchedule(bmstuApiResponse);
     }
 

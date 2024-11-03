@@ -53,7 +53,7 @@ public class SseuParser implements Parser {
         SseuApiResponse nextWeekResponse = mapper.readValue(getSchduleJsonAsString(getEvenRequest), SseuApiResponse.class);
         List<SseuApiResponse> sseuApiResponseList = List.of(currentWeekResponse, nextWeekResponse);
 
-        log.info("Successfully parsing data from SSEU API");
+        log.info("Successfully fetching data from SSEU API");
         return mappingService.mapSseuToSchedule(sseuApiResponseList);
     }
 

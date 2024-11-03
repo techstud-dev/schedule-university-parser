@@ -10,8 +10,20 @@ import java.io.Serializable;
 @Setter
 public class ParsingTask implements Serializable {
 
+    /**
+     * Название университета аббревиатурой
+     */
     private String universityName;
+
+    /**
+     * Id группы (можно найти в урле)
+     */
     private String groupId;
+
+    /**
+     * Номер подгруппы (нужен для некоторых университетов)
+     */
+    private String subGroupId;
 
     @Override
     public String toString() {
