@@ -23,7 +23,7 @@ public class ParsingTask implements Serializable {
     /**
      * Номер подгруппы (нужен для некоторых университетов)
      */
-    private String subGroupId;
+    private String subGroupId = "";
 
     @Override
     public String toString() {
