@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -28,5 +29,9 @@ public class ParserFactory {
             throw new IllegalArgumentException("Parser for university " + task.getUniversityName() + " not found");
         }
         return parser;
+    }
+
+    public Set<String> getParserList() {
+        return parsers.keySet();
     }
 }

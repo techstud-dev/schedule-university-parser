@@ -1,6 +1,5 @@
 package com.techstud.sch_parser.service.impl;
 
-import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.model.*;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuScheduleItem;
@@ -88,6 +87,10 @@ public class MappingServiceImpl implements MappingService {
         Element oddElement = documents.get(1)
                 .getElementsByClass("schedule")
                 .first();
+
+        if (evenElement == null && oddElement == null) {
+            return null;
+        }
 
         Map<DayOfWeek, ScheduleDay> evenSchedule = getSsauSchedule(evenElement);
         Map<DayOfWeek, ScheduleDay> oddSchedule = getSsauSchedule(oddElement);
@@ -426,16 +429,24 @@ public class MappingServiceImpl implements MappingService {
     }
 
     @Override
-    public Schedule mapTltsuToSchedule(List<TltsuApiResponse> response) throws EmptyScheduleException {
+    public Schedule mapTltsuToSchedule(List<TltsuApiResponse> response) {
         TltsuApiResponse oddSchedule = response.get(0);
         TltsuApiResponse evenSchedule = response.get(1);
 
-        if (oddSchedule.getSchedules().isEmpty() || evenSchedule.getSchedules().isEmpty()) {
-            throw new EmptyScheduleException("Empty schedule getting from TLTSU");
+        if (oddSchedule.getSchedules().isEmpty() && evenSchedule.getSchedules().isEmpty()) {
+            return null;
         }
         Schedule schedule = new Schedule();
-        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = getWeekScheduleFromTltsu(oddSchedule);
-        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = getWeekScheduleFromTltsu(evenSchedule);
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
+        if (!oddSchedule.getSchedules().isEmpty()) {
+            oddWeekSchedule = getWeekScheduleFromTltsu(oddSchedule);
+        }
+
+        if (!evenSchedule.getSchedules().isEmpty()) {
+            evenWeekSchedule = getWeekScheduleFromTltsu(evenSchedule);
+        }
+
         schedule.setOddWeekSchedule(oddWeekSchedule);
         schedule.setEvenWeekSchedule(evenWeekSchedule);
         return schedule;

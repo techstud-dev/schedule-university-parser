@@ -1,5 +1,6 @@
 package com.techstud.sch_parser.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techstud.sch_parser.domain.ParserFacade;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
@@ -22,11 +23,18 @@ public class KafkaConsumer {
 
     @KafkaListener(topics = "#{'${kafka.topic.parsing-queue}'}", concurrency = "${spring.kafka.listener.concurrency}",
             autoStartup = "true", groupId = "parser_group")
-    public void listen(ConsumerRecord<String, String> consumerRecord) throws Exception {
+    public void listen(ConsumerRecord<String, String> consumerRecord) throws JsonProcessingException {
         final String id = consumerRecord.key();
         final String parseTaskAsString = consumerRecord.value();
         messageIdHolder.set(id);
-        log.info("Received message  key: {}, value {}", id, parseTaskAsString);
+        log.info("Received message  key: {}, value:\n{}", id, parseTaskAsString);
+
+        if (id == null || parseTaskAsString == null) {
+            log.error("Empty message key or value");
+            throw new JsonProcessingException("Empty message key or value") {
+            };
+
+        }
         final ParsingTask parseTask = objectMapper.readValue(parseTaskAsString, ParsingTask.class);
         parserFacade.parseSchedule(id, parseTask);
 
