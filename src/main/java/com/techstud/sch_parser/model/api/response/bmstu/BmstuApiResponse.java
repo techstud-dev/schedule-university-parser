@@ -7,6 +7,7 @@ import lombok.Getter;
 import java.io.Serializable;
 
 @Getter
+@SuppressWarnings("unused")
 public class BmstuApiResponse implements Serializable {
 
     private BmstuData data;

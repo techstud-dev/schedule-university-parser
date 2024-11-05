@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Getter
+@SuppressWarnings("unused")
 public class TltsuSchedule implements Serializable {
 
     private String id;

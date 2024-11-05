@@ -5,6 +5,7 @@ import lombok.Getter;
 import java.io.Serializable;
 
 @Getter
+@SuppressWarnings("unused")
 public class TltsuClassRoom implements Serializable {
 
     private String id;

@@ -8,12 +8,11 @@ import java.io.Serializable;
 import java.util.List;
 
 @Getter
+@SuppressWarnings("unused")
 public class SseuApiResponse implements Serializable {
 
     private String week;
-
     private List<SseuHeader> headers;
-
     private List<SseuScheduleRow> body;
 
     public String toString() {

@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Getter
+@SuppressWarnings("unused")
 public class BmstuData implements Serializable {
 
     private String type;

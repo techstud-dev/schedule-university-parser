@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Setter
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @EqualsAndHashCode(of = "date")
 @Getter
@@ -21,7 +22,6 @@ public class ScheduleDay implements Serializable {
 
     private Date date;
 
-    @Setter
     private Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
 
     public void setDate(String date) {
@@ -29,12 +29,8 @@ public class ScheduleDay implements Serializable {
         dateFormat.setLenient(false);
         try {
             this.date = dateFormat.parse(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (ParseException ignored) {
         }
     }
 
-    public void setDate(Date date) {
-        this.date = date;
-    }
 }

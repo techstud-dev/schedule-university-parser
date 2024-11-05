@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Getter
+@SuppressWarnings("unused")
 public class SseuAudience implements Serializable {
 
     private Long id;

@@ -26,16 +26,13 @@ public class ParserFacade {
         Schedule schedule;
         try {
             validationService.validateRequest(task, parserFactory.getParserList());
-            Parser parser = parserFactory.getParser(task);
-            schedule = parser.parseSchedule(task);
+            schedule = parserFactory.getParser(task).parseSchedule(task);
             validationService.validateSchedule(schedule);
         } catch (Exception e) {
             log.error("Error while parsing schedule", e);
             kafkaProducer.sendFailure(messageKey, globalExceptionHandler.handleException(messageKey, e));
             return;
         }
-        if (schedule != null) {
             kafkaProducer.sendSuccess(messageKey, schedule);
-        }
     }
 }
