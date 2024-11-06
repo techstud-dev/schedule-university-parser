@@ -17,14 +17,13 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class ScheduleDay implements Serializable {
 
     private Date date;
 
     private Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
 
-    public void setDate(String date) {
+    public void setDateAsString(String date) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
         dateFormat.setLenient(false);
         try {
