@@ -714,7 +714,7 @@ public class MappingServiceImpl implements MappingService {
                 break;
             }
         }
-        scheduleDay.setDate(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
+        scheduleDay.setDateAsString(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
         scheduleDay.setLessons(timeSheetListMap);
         return scheduleDay;
     }
