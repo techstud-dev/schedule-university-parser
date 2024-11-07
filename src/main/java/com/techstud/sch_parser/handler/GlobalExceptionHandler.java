@@ -1,8 +1,5 @@
 package com.techstud.sch_parser.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techstud.sch_parser.kafka.KafkaConsumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
