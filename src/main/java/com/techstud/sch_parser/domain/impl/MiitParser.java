@@ -35,31 +35,19 @@ public class MiitParser implements Parser {
         log.info("Connecting to MIIT timetable page: {}", url);
         Document document = Jsoup.connect(url).get();
 
-        boolean isCurrentWeekEven = isWeekEven(LocalDate.now());
-
-        Element currentWeekElement = document.select("#week-1").first();
-        Element nextWeekElement = document.select("#week-2").first();
+        Element oddWeekElement = document.select("#week-1").first();
+        Element evenWeekElement = document.select("#week-2").first();
 
         List<Document> weekDocuments = new ArrayList<>();
-
-        if (isCurrentWeekEven) {
-            weekDocuments.add(parseHtmlContent(currentWeekElement));
-            weekDocuments.add(parseHtmlContent(nextWeekElement));
-        } else {
-            weekDocuments.add(parseHtmlContent(nextWeekElement));
-            weekDocuments.add(parseHtmlContent(currentWeekElement));
-        }
+        assert oddWeekElement != null;
+        weekDocuments.add(parseHtmlContent(oddWeekElement));
+        assert evenWeekElement != null;
+        weekDocuments.add(parseHtmlContent(evenWeekElement));
 
         Schedule schedule = mappingService.mapMiitToSchedule(weekDocuments);
 
         log.info("Finished parsing schedule for group: {}", task.getGroupId());
         return schedule;
-    }
-
-    private boolean isWeekEven(LocalDate date) {
-        LocalDate startSemesterDate = LocalDate.of(2024, Month.SEPTEMBER, 2);
-        long weeksBetween = ChronoUnit.WEEKS.between(startSemesterDate, date);
-        return weeksBetween % 2 == 0;
     }
 
     private Document parseHtmlContent(Element weekElement) {
