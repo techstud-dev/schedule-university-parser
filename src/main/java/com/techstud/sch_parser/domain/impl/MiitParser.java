@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
@@ -20,19 +21,19 @@ import java.util.List;
 @Component("MIIT")
 @RequiredArgsConstructor
 @Slf4j
-public class MittParser implements Parser {
+public class MiitParser implements Parser {
 
     private final MappingService mappingService;
 
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
-        String scheduleUrl = "URL_РАСПИСАНИЯ_МИИТ";
+        log.info("Parsing schedule started for group: {}", task.getGroupId());
 
-        log.info("Connecting to MIIT timetable page: {}", scheduleUrl);
+        String scheduleUrl = "https://www.miit.ru/timetable/{0}";
+        String url = MessageFormat.format(scheduleUrl, task.getGroupId());
 
-        Document document = Jsoup.connect(scheduleUrl).get();
-
-        log.info("Successfully fetched timetable page from MIIT");
+        log.info("Connecting to MIIT timetable page: {}", url);
+        Document document = Jsoup.connect(url).get();
 
         boolean isCurrentWeekEven = isWeekEven(LocalDate.now());
 
@@ -42,18 +43,17 @@ public class MittParser implements Parser {
         List<Document> weekDocuments = new ArrayList<>();
 
         if (isCurrentWeekEven) {
-            assert currentWeekElement != null;
             weekDocuments.add(parseHtmlContent(currentWeekElement));
-            assert nextWeekElement != null;
             weekDocuments.add(parseHtmlContent(nextWeekElement));
         } else {
-            assert nextWeekElement != null;
             weekDocuments.add(parseHtmlContent(nextWeekElement));
-            assert currentWeekElement != null;
             weekDocuments.add(parseHtmlContent(currentWeekElement));
         }
 
-        return mappingService.mapMiitToSchedule(weekDocuments);
+        Schedule schedule = mappingService.mapMiitToSchedule(weekDocuments);
+
+        log.info("Finished parsing schedule for group: {}", task.getGroupId());
+        return schedule;
     }
 
     private boolean isWeekEven(LocalDate date) {

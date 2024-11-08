@@ -28,8 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.staticParseDayOfWeek;
-import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.staticUneconParseDayOfWeek;
+import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.*;
 
 @Service
 @Slf4j
@@ -220,74 +219,156 @@ public class MappingServiceImpl implements MappingService {
 
     @Override
     public Schedule mapMiitToSchedule(List<Document> documents) {
+        log.info("Start mapping MIIT data to schedule");
+
         Schedule schedule = new Schedule();
         schedule.setEvenWeekSchedule(new HashMap<>());
         schedule.setOddWeekSchedule(new HashMap<>());
 
-        Map<DayOfWeek, ScheduleDay> evenWeekLessons = parseWeekSchedule(documents.get(0));
-        Map<DayOfWeek, ScheduleDay> oddWeekLessons = parseWeekSchedule(documents.get(1));
-
+        log.info("Mapping even week schedule.");
+        Map<DayOfWeek, ScheduleDay> evenWeekLessons = parseMiitWeekSchedule(documents.get(0));
         schedule.setEvenWeekSchedule(evenWeekLessons);
+
+        log.info("Mapping odd week schedule.");
+        Map<DayOfWeek, ScheduleDay> oddWeekLessons = parseMiitWeekSchedule(documents.get(1));
         schedule.setOddWeekSchedule(oddWeekLessons);
 
+        log.info("Mapping MIIT data to schedule finished.");
         return schedule;
     }
 
-    private Map<DayOfWeek, ScheduleDay> parseWeekSchedule(Document document) {
-        Map<DayOfWeek, ScheduleDay> weekSchedule = new HashMap<>();
+    private Map<DayOfWeek, ScheduleDay> parseMiitWeekSchedule(Document document) {
+        Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
+        Elements rows = document.select("tr");
 
-        Elements dayHeaders = document.select("th");
-        Elements dayRows = document.select("td.timetable_grid-day");
+        if (rows.isEmpty()) {
+            log.warn("No rows found in the document");
+            return weekSchedule;
+        }
 
-        int dayIndex = 0;
-        for (Element dayHeader : dayHeaders) {
-            String dayOfWeekText = dayHeader.text().split(" ")[0];
-            DayOfWeek dayOfWeek = staticParseDayOfWeek(dayOfWeekText);
+        Element headerRow = rows.get(0);
+        Elements dayHeaders = headerRow.select("th");
+        Map<Integer, DayOfWeek> dayOfWeekMapping = new LinkedHashMap<>();
 
+        for (int i = 1; i < dayHeaders.size(); i++) {
+            String dayOfWeekText = dayHeaders.get(i).text().split(" ")[0].trim();
+            DayOfWeek dayOfWeek = staticMiitParseDayOfWeeK(dayOfWeekText);
             if (dayOfWeek != null) {
-                Map<TimeSheet, List<ScheduleObject>> lessons = new HashMap<>();
-                Elements lessonsForDay = dayRows.get(dayIndex).select(".timetable_grid-day-lesson");
+                dayOfWeekMapping.put(i - 1, dayOfWeek);
+                weekSchedule.put(dayOfWeek, new ScheduleDay());
+                log.info("Mapped column index {} to {}", i - 1, dayOfWeek);
+            } else {
+                log.warn("Could not parse day of week for text: {}", dayOfWeekText);
+            }
+        }
 
-                for (Element lessonElement : lessonsForDay) {
-                    TimeSheet timeSheet = getMiitTimeSheet(lessonElement);
-                    ScheduleObject scheduleObject = getMiitScheduleObject(lessonElement);
+        for (int rowIndex = 1; rowIndex < rows.size(); rowIndex++) {
+            Element lessonRow = rows.get(rowIndex);
+            Elements cells = lessonRow.select("td");
 
-                    lessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+            if (cells.isEmpty()) {
+                log.warn("Empty row encountered at index {}", rowIndex);
+                continue;
+            }
+
+            Element timeCell = cells.get(0);
+            TimeSheet timeSheet = getMiitTimeSheet(timeCell);
+
+            for (int i = 1; i < cells.size(); i++) {
+                Element lessonCell = cells.get(i);
+                DayOfWeek dayOfWeek = dayOfWeekMapping.get(i - 1);
+
+                if (dayOfWeek == null) {
+                    log.warn("No corresponding day for column index {}", i - 1);
+                    continue;
                 }
 
-                ScheduleDay scheduleDay = new ScheduleDay();
-                scheduleDay.setLessons(lessons);
-                weekSchedule.put(dayOfWeek, scheduleDay);
+                // Пропускаем пустые ячейки
+                if (lessonCell.text().trim().isEmpty()) {
+                    log.info("Empty cell for day {} at time {}, skipping.", dayOfWeek, timeSheet);
+                    continue;
+                }
+
+                log.info("Mapping lessons for day: {}", dayOfWeek);
+
+                ScheduleObject scheduleObject = getMiitScheduleObject(lessonCell);
+
+                log.info("Parsed schedule object: {}", scheduleObject);
+
+                ScheduleDay scheduleDay = weekSchedule.get(dayOfWeek);
+                scheduleDay.getLessons().computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
             }
-            dayIndex++;
         }
 
         return weekSchedule;
     }
 
-    private TimeSheet getMiitTimeSheet(Element lessonElement) {
-        String timeText = lessonElement.select(".timetable_grid-text_gray").text();
-        String[] timeParts = timeText.split(" - ");
-        return new TimeSheet(timeParts[0], timeParts[1]);
+    private TimeSheet getMiitTimeSheet(Element timeCell) {
+        if (timeCell == null) {
+            log.error("Time cell not found.");
+            return null;
+        }
+
+        String timeText = timeCell.selectFirst(".timetable__grid-text_gray").text();
+        log.info("Processing time text: '{}'", timeText);
+
+        String[] timeParts = timeText.split(" — ");
+        if (timeParts.length < 2) {
+            log.error("Invalid time format for time cell: '{}'", timeText);
+            return null;
+        }
+
+        return new TimeSheet(timeParts[0].trim(), timeParts[1].trim());
     }
 
     private ScheduleObject getMiitScheduleObject(Element lessonElement) {
         ScheduleObject scheduleObject = new ScheduleObject();
 
-        scheduleObject.setName(lessonElement.select("span").text());
-
-        Element teacherElement = lessonElement.select("a[title]").first();
-        if (teacherElement != null) {
-            scheduleObject.setTeacher(teacherElement.attr("title"));
+        Element lessonName = lessonElement.select("div.timetable__grid-day-lesson").first();
+        if (lessonName != null) {
+            String lessonNameText = lessonName.ownText();
+            scheduleObject.setName(lessonNameText);
+        } else {
+            scheduleObject.setName(null);
         }
 
-        Element placeElement = lessonElement.select("a.icon-location[title]").first();
-        if (placeElement != null) {
-            scheduleObject.setPlace(placeElement.attr("title"));
+        String type = lessonElement.select(".timetable__grid-text_gray").text();
+        if (type != null) {
+            scheduleObject.setType(mapMiitLessonTypeToScheduleType(type));
+        } else {
+            scheduleObject.setType(null);
         }
 
-        String type = lessonElement.select("timetable__grid-text_gray").text();
-        scheduleObject.setType(mapMiitLessonTypeToScheduleType(type));
+        Element teacher = lessonElement.select("a.icon-academic-cap").first();
+        if (teacher != null) {
+            String teacherText = teacher.ownText();
+            scheduleObject.setTeacher(teacherText);
+        } else {
+            scheduleObject.setTeacher(null);
+        }
+
+        Elements groupElements = lessonElement.select("span.icon-community, a.icon-community");
+        if (groupElements != null) {
+            for (Element groupElementEach : groupElements) {
+                scheduleObject.getGroups().add(groupElementEach.ownText());
+            }
+        } else {
+            scheduleObject.setGroups(null);
+        }
+
+        Elements placeElements = lessonElement.select("a.icon-location");
+        StringBuilder allPlaces = new StringBuilder();
+        for (Element placeElementEach : placeElements) {
+            String placeElementText = placeElementEach.ownText();
+            if (!placeElementText.isEmpty()) {
+                if (!allPlaces.isEmpty()) {
+                    allPlaces.append(", ");
+                }
+                allPlaces.append(placeElementText);
+            }
+        }
+
+        scheduleObject.setPlace(allPlaces.toString());
 
         return scheduleObject;
     }
