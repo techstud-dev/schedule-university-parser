@@ -28,8 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.staticParseDayOfWeek;
-import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.staticUneconParseDayOfWeek;
+import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.*;
 
 @Service
 @Slf4j
@@ -216,6 +215,154 @@ public class MappingServiceImpl implements MappingService {
 
         log.info("Mapping PGUPS data to schedule {} finished", schedule);
         return schedule;
+    }
+
+    @Override
+    public Schedule mapMiitToSchedule(List<Document> documents) {
+        log.info("Start mapping MIIT data to schedule");
+
+        Schedule schedule = new Schedule();
+        schedule.setEvenWeekSchedule(new HashMap<>());
+        schedule.setOddWeekSchedule(new HashMap<>());
+
+        log.info("Mapping even week schedule.");
+        Map<DayOfWeek, ScheduleDay> evenWeekLessons = parseMiitWeekSchedule(documents.get(0));
+        schedule.setEvenWeekSchedule(evenWeekLessons);
+
+        log.info("Mapping odd week schedule.");
+        Map<DayOfWeek, ScheduleDay> oddWeekLessons = parseMiitWeekSchedule(documents.get(1));
+        schedule.setOddWeekSchedule(oddWeekLessons);
+
+        log.info("Mapping MIIT data to schedule finished.");
+        return schedule;
+    }
+
+    private Map<DayOfWeek, ScheduleDay> parseMiitWeekSchedule(Document document) {
+        Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
+        Elements rows = document.select("tr");
+
+        if (rows.isEmpty()) {
+            log.warn("No rows found in the document");
+            return weekSchedule;
+        }
+
+        Element headerRow = rows.get(0);
+        Elements dayHeaders = headerRow.select("th");
+        Map<Integer, DayOfWeek> dayOfWeekMapping = new LinkedHashMap<>();
+
+        for (int i = 1; i < dayHeaders.size(); i++) {
+            String dayOfWeekText = dayHeaders.get(i).text().split(" ")[0].trim();
+            DayOfWeek dayOfWeek = staticMiitParseDayOfWeeK(dayOfWeekText);
+            if (dayOfWeek != null) {
+                dayOfWeekMapping.put(i - 1, dayOfWeek);
+                weekSchedule.put(dayOfWeek, new ScheduleDay());
+            } else {
+                log.warn("Could not parse day of week for text: {}", dayOfWeekText);
+            }
+        }
+
+        for (int rowIndex = 1; rowIndex < rows.size(); rowIndex++) {
+            Element lessonRow = rows.get(rowIndex);
+            Elements cells = lessonRow.select("td");
+
+            if (cells.isEmpty()) {
+                log.warn("Empty row encountered at index {}", rowIndex);
+                continue;
+            }
+
+            Element timeCell = cells.get(0);
+            TimeSheet timeSheet = getMiitTimeSheet(timeCell);
+
+            for (int i = 1; i < cells.size(); i++) {
+                Element lessonCell = cells.get(i);
+                DayOfWeek dayOfWeek = dayOfWeekMapping.get(i - 1);
+
+                if (dayOfWeek == null) {
+                    log.warn("No corresponding day for column index {}", i - 1);
+                    continue;
+                }
+
+                if (lessonCell.text().trim().isEmpty()) {
+                    continue;
+                }
+
+                ScheduleObject scheduleObject = getMiitScheduleObject(lessonCell);
+
+                ScheduleDay scheduleDay = weekSchedule.get(dayOfWeek);
+                scheduleDay.getLessons().computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
+            }
+        }
+
+        return weekSchedule;
+    }
+
+    private TimeSheet getMiitTimeSheet(Element timeCell) {
+        if (timeCell == null) {
+            log.error("Time cell not found.");
+            return null;
+        }
+
+        String timeText = timeCell.selectFirst(".timetable__grid-text_gray").text();
+
+        String[] timeParts = timeText.split(" — ");
+        if (timeParts.length < 2) {
+            log.error("Invalid time format for time cell: '{}'", timeText);
+            return null;
+        }
+
+        return new TimeSheet(timeParts[0].trim(), timeParts[1].trim());
+    }
+
+    private ScheduleObject getMiitScheduleObject(Element lessonElement) {
+        ScheduleObject scheduleObject = new ScheduleObject();
+
+        Element lessonName = lessonElement.select("div.timetable__grid-day-lesson").first();
+        if (lessonName != null) {
+            String lessonNameText = lessonName.ownText();
+            scheduleObject.setName(lessonNameText);
+        } else {
+            scheduleObject.setName(null);
+        }
+
+        String type = lessonElement.select(".timetable__grid-text_gray").text();
+        if (type != null) {
+            scheduleObject.setType(mapMiitLessonTypeToScheduleType(type));
+        } else {
+            scheduleObject.setType(null);
+        }
+
+        Element teacher = lessonElement.select("a.icon-academic-cap").first();
+        if (teacher != null) {
+            String teacherText = teacher.ownText();
+            scheduleObject.setTeacher(teacherText);
+        } else {
+            scheduleObject.setTeacher(null);
+        }
+
+        Elements groupElements = lessonElement.select("span.icon-community, a.icon-community");
+        if (groupElements != null) {
+            for (Element groupElementEach : groupElements) {
+                scheduleObject.getGroups().add(groupElementEach.ownText());
+            }
+        } else {
+            scheduleObject.setGroups(null);
+        }
+
+        Elements placeElements = lessonElement.select("a.icon-location");
+        StringBuilder allPlaces = new StringBuilder();
+        for (Element placeElementEach : placeElements) {
+            String placeElementText = placeElementEach.ownText();
+            if (!placeElementText.isEmpty()) {
+                if (!allPlaces.isEmpty()) {
+                    allPlaces.append(", ");
+                }
+                allPlaces.append(placeElementText);
+            }
+        }
+
+        scheduleObject.setPlace(allPlaces.toString());
+
+        return scheduleObject;
     }
 
     private Map<DayOfWeek, ScheduleDay> parseSchedule(Document document) {
@@ -911,6 +1058,14 @@ public class MappingServiceImpl implements MappingService {
                 "пр", ScheduleType.PRACTICE,
                 "лек", ScheduleType.LECTURE,
                 "лаб", ScheduleType.LAB);
+        return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
+    }
+
+    private ScheduleType mapMiitLessonTypeToScheduleType(String lessonType) {
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "Практическое занятие", ScheduleType.PRACTICE,
+                "Лекция", ScheduleType.LECTURE,
+                "Лабораторная работа", ScheduleType.LAB);
         return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
 }

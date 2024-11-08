@@ -35,6 +35,18 @@ public class ScheduleDayOfWeekParse implements Serializable {
         };
     }
 
+    public static DayOfWeek staticMiitParseDayOfWeeK(String dayName) {
+        return switch(dayName) {
+            case "Понедельник" -> DayOfWeek.MONDAY;
+            case "Вторник" -> DayOfWeek.TUESDAY;
+            case "Среда" -> DayOfWeek.WEDNESDAY;
+            case "Четверг" -> DayOfWeek.THURSDAY;
+            case "Пятница" -> DayOfWeek.FRIDAY;
+            case "Суббота" -> DayOfWeek.SATURDAY;
+            default -> throw new IllegalArgumentException("Неизвестный день недели: " + dayName);
+        };
+    }
+
     public static List<DayOfWeek> returnListDayOfTheWeek() {
         return Arrays.asList(
                 DayOfWeek.MONDAY,
