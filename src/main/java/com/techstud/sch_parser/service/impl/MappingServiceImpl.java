@@ -256,7 +256,6 @@ public class MappingServiceImpl implements MappingService {
             if (dayOfWeek != null) {
                 dayOfWeekMapping.put(i - 1, dayOfWeek);
                 weekSchedule.put(dayOfWeek, new ScheduleDay());
-                log.info("Mapped column index {} to {}", i - 1, dayOfWeek);
             } else {
                 log.warn("Could not parse day of week for text: {}", dayOfWeekText);
             }
@@ -283,17 +282,7 @@ public class MappingServiceImpl implements MappingService {
                     continue;
                 }
 
-                // Пропускаем пустые ячейки
-                if (lessonCell.text().trim().isEmpty()) {
-                    log.info("Empty cell for day {} at time {}, skipping.", dayOfWeek, timeSheet);
-                    continue;
-                }
-
-                log.info("Mapping lessons for day: {}", dayOfWeek);
-
                 ScheduleObject scheduleObject = getMiitScheduleObject(lessonCell);
-
-                log.info("Parsed schedule object: {}", scheduleObject);
 
                 ScheduleDay scheduleDay = weekSchedule.get(dayOfWeek);
                 scheduleDay.getLessons().computeIfAbsent(timeSheet, k -> new ArrayList<>()).add(scheduleObject);
@@ -310,7 +299,6 @@ public class MappingServiceImpl implements MappingService {
         }
 
         String timeText = timeCell.selectFirst(".timetable__grid-text_gray").text();
-        log.info("Processing time text: '{}'", timeText);
 
         String[] timeParts = timeText.split(" — ");
         if (timeParts.length < 2) {
