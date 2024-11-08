@@ -20,7 +20,7 @@ public class ParserFactory {
     @PostConstruct
     public void init() {
         Gson gson = new Gson();
-        log.info("Bean parserFactory sucess loaded with parsers: {}", gson.toJson(parsers.keySet()));
+        log.info("Bean parserFactory success loaded with parsers: {}", gson.toJson(parsers.keySet()));
     }
 
     public Parser getParser(ParsingTask task) {
