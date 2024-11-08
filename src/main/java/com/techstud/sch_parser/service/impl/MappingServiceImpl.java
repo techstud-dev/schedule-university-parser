@@ -282,6 +282,10 @@ public class MappingServiceImpl implements MappingService {
                     continue;
                 }
 
+                if (lessonCell.text().trim().isEmpty()) {
+                    continue;
+                }
+
                 ScheduleObject scheduleObject = getMiitScheduleObject(lessonCell);
 
                 ScheduleDay scheduleDay = weekSchedule.get(dayOfWeek);
