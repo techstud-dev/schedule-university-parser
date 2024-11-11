@@ -63,11 +63,11 @@ public class MappingServiceImpl implements MappingService {
         SseuApiResponse evenWeekSseuSchedule = weekSseuSchedules.get(0).getWeek().equals("EVEN") ? weekSseuSchedules.get(0) : weekSseuSchedules.get(1);
         Schedule schedule = new Schedule();
 
-        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = createWeekScheduleWithoutLessons(evenWeekSseuSchedule);
-        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = createWeekScheduleWithoutLessons(oddWeekSseuSchedule);
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = createSseuWeekScheduleWithoutLessons(evenWeekSseuSchedule);
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = createSseuWeekScheduleWithoutLessons(oddWeekSseuSchedule);
 
-        evenWeekSchedule = fillSchedule(evenWeekSseuSchedule, evenWeekSchedule);
-        oddWeekSchedule = fillSchedule(oddWeekSseuSchedule, oddWeekSchedule);
+        evenWeekSchedule = fillSseuSchedule(evenWeekSseuSchedule, evenWeekSchedule);
+        oddWeekSchedule = fillSseuSchedule(oddWeekSseuSchedule, oddWeekSchedule);
 
         schedule.setSnapshotDate(new Date());
         schedule.setEvenWeekSchedule(evenWeekSchedule);
@@ -113,11 +113,11 @@ public class MappingServiceImpl implements MappingService {
 
             switch (scheduleItem.getWeek()) {
                 case "all" -> {
-                    addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
-                    addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
+                    addBmstuToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
+                    addBmstuToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
                 }
-                case "ch" -> addToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
-                case "zn" -> addToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
+                case "ch" -> addBmstuToSchedule(evenWeekSchedule, dayOfWeek, scheduleItem);
+                case "zn" -> addBmstuToSchedule(oddWeekSchedule, dayOfWeek, scheduleItem);
                 default -> {
                 }
             }
@@ -210,8 +210,8 @@ public class MappingServiceImpl implements MappingService {
 
         Schedule schedule = new Schedule();
         schedule.setSnapshotDate(new Date());
-        schedule.setEvenWeekSchedule(parseSchedule(documents.get(0)));
-        schedule.setOddWeekSchedule(parseSchedule(documents.get(1)));
+        schedule.setEvenWeekSchedule(parsePgupsSchedule(documents.get(0)));
+        schedule.setOddWeekSchedule(parsePgupsSchedule(documents.get(1)));
 
         log.info("Mapping PGUPS data to schedule {} finished", schedule);
         return schedule;
@@ -248,7 +248,7 @@ public class MappingServiceImpl implements MappingService {
         Map<Integer, DayOfWeek> dayOfWeekMapping = extractMiitDayOfWeekMapping(rows.get(0));
         List<TimeSheet> allTimeSheets = extractAllMiitTimeSheets(rows);
 
-        weekSchedule.values().forEach(day -> day.setLessons(createEmptyTimeSheetMap(allTimeSheets)));
+        weekSchedule.values().forEach(day -> day.setLessons(createEmptyMiitTimeSheetMap(allTimeSheets)));
 
         rows.stream().skip(1).forEach(row -> processMiitLessonRow(row, weekSchedule, dayOfWeekMapping));
 
@@ -280,7 +280,7 @@ public class MappingServiceImpl implements MappingService {
                 .collect(Collectors.toList());
     }
 
-    private Map<TimeSheet, List<ScheduleObject>> createEmptyTimeSheetMap(List<TimeSheet> timeSheets) {
+    private Map<TimeSheet, List<ScheduleObject>> createEmptyMiitTimeSheetMap(List<TimeSheet> timeSheets) {
         return timeSheets.stream().collect(Collectors.toMap(
                 ts -> ts,
                 ts -> new ArrayList<>(),
@@ -358,19 +358,19 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObject;
     }
 
-    private Map<DayOfWeek, ScheduleDay> parseSchedule(Document document) {
+    private Map<DayOfWeek, ScheduleDay> parsePgupsSchedule(Document document) {
         Map<DayOfWeek, ScheduleDay> schedule = new LinkedHashMap<>();
         Elements scheduleDays = document.getElementsByTag("tbody");
 
         scheduleDays.forEach(day -> {
             DayOfWeek dayOfWeek = staticParseDayOfWeek(day.getElementsByClass("kt-font-dark").text().toLowerCase());
-            schedule.put(dayOfWeek, parseScheduleDay(day));
+            schedule.put(dayOfWeek, parsePgupsScheduleDay(day));
         });
 
         return schedule;
     }
 
-    private ScheduleDay parseScheduleDay(Element dayElement) {
+    private ScheduleDay parsePgupsScheduleDay(Element dayElement) {
         Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
 
         dayElement.getElementsByTag("tr").forEach(lesson -> {
@@ -378,7 +378,7 @@ public class MappingServiceImpl implements MappingService {
                     .text()
                     .split("—");
             TimeSheet timeSheet = new TimeSheet(timeRange[0].trim(), timeRange[1].trim());
-            lessons.put(timeSheet, parseScheduleObjects(lesson));
+            lessons.put(timeSheet, parsePgupsScheduleObjects(lesson));
         });
 
         ScheduleDay scheduleDay = new ScheduleDay();
@@ -386,7 +386,7 @@ public class MappingServiceImpl implements MappingService {
         return scheduleDay;
     }
 
-    private List<ScheduleObject> parseScheduleObjects(Element lesson) {
+    private List<ScheduleObject> parsePgupsScheduleObjects(Element lesson) {
         List<ScheduleObject> scheduleObjects = new ArrayList<>();
 
         ScheduleObject scheduleObject = new ScheduleObject();
@@ -548,26 +548,6 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObjects;
     }
 
-    private ScheduleDay getMephiScheduleDay(Element element) {
-        List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
-
-        ScheduleDay scheduleDay = new ScheduleDay();
-        Map<TimeSheet, List<ScheduleObject>> scheduleDayMap = new LinkedHashMap<>();
-
-        for (Element groupElement : groupList) {
-            Elements timeElements = groupElement.select(".lesson-time");
-
-            String timeRange = Objects.requireNonNull(timeElements.first()).text();
-            TimeSheet timeSheet = parseMephiTimeSheet(timeRange);
-
-            List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
-            scheduleDayMap.put(timeSheet, scheduleObjects);
-        }
-
-        scheduleDay.setLessons(scheduleDayMap);
-        return scheduleDay;
-    }
-
     @Override
     public Schedule mapTltsuToSchedule(List<TltsuApiResponse> response) {
         TltsuApiResponse oddSchedule = response.get(0);
@@ -606,7 +586,7 @@ public class MappingServiceImpl implements MappingService {
         if (scheduleDay == null) {
             scheduleDay = new ScheduleDay();
         }
-        TimeSheet timeSheet = getTimeSheet(schedule);
+        TimeSheet timeSheet = getSseuTimeSheet(schedule);
         Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
 
         if (lessons == null) {
@@ -658,7 +638,7 @@ public class MappingServiceImpl implements MappingService {
         }
     }
 
-    private TimeSheet getTimeSheet(TltsuSchedule schedule) {
+    private TimeSheet getSseuTimeSheet(TltsuSchedule schedule) {
         Instant dateFrom = Instant.parse(schedule.getFromTime());
         Instant dateTo = Instant.parse(schedule.getToTime());
         LocalDateTime localDateTimeFrom = LocalDateTime.ofInstant(dateFrom, ZoneOffset.UTC);
@@ -670,6 +650,26 @@ public class MappingServiceImpl implements MappingService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
         LocalDate date = LocalDate.parse(schedule.getDate(), formatter);
         return date.getDayOfWeek();
+    }
+
+    private ScheduleDay getMephiScheduleDay(Element element) {
+        List<Element> groupList = element.select("div.list-group-item.d-xs-flex");
+
+        ScheduleDay scheduleDay = new ScheduleDay();
+        Map<TimeSheet, List<ScheduleObject>> scheduleDayMap = new LinkedHashMap<>();
+
+        for (Element groupElement : groupList) {
+            Elements timeElements = groupElement.select(".lesson-time");
+
+            String timeRange = Objects.requireNonNull(timeElements.first()).text();
+            TimeSheet timeSheet = parseMephiTimeSheet(timeRange);
+
+            List<ScheduleObject> scheduleObjects = getMephiScheduleObjects(groupElement);
+            scheduleDayMap.put(timeSheet, scheduleObjects);
+        }
+
+        scheduleDay.setLessons(scheduleDayMap);
+        return scheduleDay;
     }
 
     private List<ScheduleObject> getMephiScheduleObjects(Element element) {
@@ -765,14 +765,14 @@ public class MappingServiceImpl implements MappingService {
         return weekSchedule;
     }
 
-    private void addToSchedule(Map<DayOfWeek, ScheduleDay> weekSchedule, DayOfWeek dayOfWeek, BmstuScheduleItem scheduleItem) {
+    private void addBmstuToSchedule(Map<DayOfWeek, ScheduleDay> weekSchedule, DayOfWeek dayOfWeek, BmstuScheduleItem scheduleItem) {
         ScheduleDay scheduleDay = weekSchedule.computeIfAbsent(dayOfWeek, k -> new ScheduleDay());
-        addScheduleItemToDay(scheduleDay, scheduleItem);
+        addBmstuScheduleItemToDay(scheduleDay, scheduleItem);
     }
 
-    private void addScheduleItemToDay(ScheduleDay scheduleDay, BmstuScheduleItem scheduleItem) {
+    private void addBmstuScheduleItemToDay(ScheduleDay scheduleDay, BmstuScheduleItem scheduleItem) {
         TimeSheet timeSheet = new TimeSheet(scheduleItem.getStartTime(), scheduleItem.getEndTime());
-        ScheduleObject scheduleObject = createScheduleObject(scheduleItem);
+        ScheduleObject scheduleObject = createBmstuScheduleObject(scheduleItem);
 
         Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
         if (lessons == null) {
@@ -784,7 +784,7 @@ public class MappingServiceImpl implements MappingService {
         scheduleObjects.add(scheduleObject);
     }
 
-    private ScheduleObject createScheduleObject(BmstuScheduleItem scheduleItem) {
+    private ScheduleObject createBmstuScheduleObject(BmstuScheduleItem scheduleItem) {
         ScheduleObject scheduleObject = new ScheduleObject();
         scheduleObject.setName(scheduleItem.getDiscipline().getFullName());
 
@@ -823,7 +823,6 @@ public class MappingServiceImpl implements MappingService {
 
         return scheduleTypeMap.getOrDefault(bmstuType, ScheduleType.UNKNOWN);
     }
-
 
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
@@ -890,7 +889,7 @@ public class MappingServiceImpl implements MappingService {
         return groupNames;
     }
 
-    private Map<DayOfWeek, ScheduleDay> createWeekScheduleWithoutLessons(SseuApiResponse sseuSchedule) {
+    private Map<DayOfWeek, ScheduleDay> createSseuWeekScheduleWithoutLessons(SseuApiResponse sseuSchedule) {
         Map<DayOfWeek, ScheduleDay> weekSchedule = new LinkedHashMap<>();
         sseuSchedule.getHeaders().forEach(header -> {
             if (!header.getValue().equals("name")) {
@@ -918,7 +917,7 @@ public class MappingServiceImpl implements MappingService {
         return Date.from(instant);
     }
 
-    private Map<DayOfWeek, ScheduleDay> fillSchedule(SseuApiResponse sseuSchedule, Map<DayOfWeek, ScheduleDay> weekSchedule) {
+    private Map<DayOfWeek, ScheduleDay> fillSseuSchedule(SseuApiResponse sseuSchedule, Map<DayOfWeek, ScheduleDay> weekSchedule) {
         for (int i = 0; i < sseuSchedule.getBody().size(); i++) {
             LocalTime from = LocalTime.parse(sseuSchedule.getBody().get(i).getName());
 
@@ -927,7 +926,7 @@ public class MappingServiceImpl implements MappingService {
                 if (weekSchedule.containsKey(DayOfWeek.valueOf(day.toUpperCase()))) {
                     DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase());
                     Map<TimeSheet, List<ScheduleObject>> lessons = weekSchedule.get(dayOfWeek).getLessons();
-                    TimeSheet timeSheet = getTimeSheet(from, lessons.keySet());
+                    TimeSheet timeSheet = getSseuTimeSheet(from, lessons.keySet());
                     if (timeSheet == null) {
                         timeSheet = new TimeSheet();
                         timeSheet.setFrom(from);
@@ -1019,7 +1018,7 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObject;
     }
 
-    private TimeSheet getTimeSheet(LocalTime from, Set<TimeSheet> keySet) {
+    private TimeSheet getSseuTimeSheet(LocalTime from, Set<TimeSheet> keySet) {
         return keySet.stream()
                 .filter(timeSheet -> timeSheet.getFrom().equals(from))
                 .findFirst()
