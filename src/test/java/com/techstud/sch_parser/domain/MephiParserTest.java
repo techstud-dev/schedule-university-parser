@@ -24,7 +24,7 @@ public class MephiParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("19468");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -32,7 +32,7 @@ public class MephiParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("19389");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -40,7 +40,7 @@ public class MephiParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("19323");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class MephiParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("19267");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -56,6 +56,6 @@ public class MephiParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("19266");
         Parser underTest = new MephiParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 }

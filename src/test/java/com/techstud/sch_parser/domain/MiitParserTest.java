@@ -21,7 +21,7 @@ public class MiitParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("189053");
         Parser underTest = new MiitParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -29,7 +29,7 @@ public class MiitParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("185350");
         Parser underTest = new MiitParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -37,7 +37,7 @@ public class MiitParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("189530");
         Parser underTest = new MiitParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -45,7 +45,7 @@ public class MiitParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("122671");
         Parser underTest = new MiitParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -53,6 +53,6 @@ public class MiitParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("187146");
         Parser underTest = new MiitParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 }

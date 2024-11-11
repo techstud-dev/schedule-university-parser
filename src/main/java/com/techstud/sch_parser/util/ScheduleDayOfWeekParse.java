@@ -46,16 +46,4 @@ public class ScheduleDayOfWeekParse implements Serializable {
             default -> throw new IllegalArgumentException("Неизвестный день недели: " + dayName);
         };
     }
-
-    public static List<DayOfWeek> returnListDayOfTheWeek() {
-        return Arrays.asList(
-                DayOfWeek.MONDAY,
-                DayOfWeek.TUESDAY,
-                DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY,
-                DayOfWeek.FRIDAY,
-                DayOfWeek.SATURDAY,
-                DayOfWeek.SUNDAY
-        );
-    }
 }
