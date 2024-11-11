@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.*;
+import static com.techstud.sch_parser.util.ScheduleLessonTypeParse.*;
 
 @Service
 @Slf4j
@@ -344,7 +345,7 @@ public class MappingServiceImpl implements MappingService {
 
         String typeText = lessonElement.select(".timetable__grid-text_gray").text().trim();
         log.info("Extracted lesson type: '{}'", typeText);
-        scheduleObject.setType(mapMiitLessonTypeToScheduleType(typeText));
+        scheduleObject.setType(staticMapMiitLessonTypeToScheduleType(typeText));
 
         Element teacherElement = lessonElement.selectFirst("a.icon-academic-cap");
         scheduleObject.setTeacher(teacherElement != null ? teacherElement.ownText() : null);
@@ -537,7 +538,7 @@ public class MappingServiceImpl implements MappingService {
             String place = lesson.select(".room a").text().trim();
 
             ScheduleObject scheduleObject = new ScheduleObject();
-            scheduleObject.setType(mapNsuLessonTypeToScheduleType(type));
+            scheduleObject.setType(staticMapNsuLessonTypeToScheduleType(type));
             scheduleObject.setName(subject.isEmpty() ? null : subject);
             scheduleObject.setPlace(place.isEmpty() ? null : place);
             scheduleObject.setTeacher(teacher.isEmpty() ? null : teacher);
@@ -723,7 +724,7 @@ public class MappingServiceImpl implements MappingService {
                     type = "UNKNOWN";
             }
 
-            scheduleObject.setType(mapMephiLessonTypeToScheduleType(type));
+            scheduleObject.setType(staticMapMephiLessonTypeToScheduleType(type));
             scheduleObject.setName(lessonName);
             scheduleObject.setTeacher(teachers.isEmpty() ? null : String.join(", ", teachers));
             scheduleObject.setPlace(place);
@@ -994,7 +995,7 @@ public class MappingServiceImpl implements MappingService {
         }
 
         if (lessonDay.getWorkPlan() != null && lessonDay.getWorkPlan().getLessonTypes() != null) {
-            scheduleObject.setType(mapSseuLessonTypeToScheduleType(lessonDay.getWorkPlan().getLessonTypes().getName()));
+            scheduleObject.setType(staticMapSseuLessonTypeToScheduleType(lessonDay.getWorkPlan().getLessonTypes().getName()));
         }
 
         if (lessonDay.getSubject() != null && !lessonDay.getSubject().isEmpty()) {
@@ -1023,48 +1024,5 @@ public class MappingServiceImpl implements MappingService {
                 .filter(timeSheet -> timeSheet.getFrom().equals(from))
                 .findFirst()
                 .orElse(null);
-    }
-
-    private ScheduleType mapSseuLessonTypeToScheduleType(String lessonType) {
-        Map<String, ScheduleType> scheduleTypeMap = Map.of(
-                "Лекции", ScheduleType.LECTURE,
-                "Практические", ScheduleType.PRACTICE,
-                "Лабораторные", ScheduleType.LAB,
-                "Пересдача Зачет", ScheduleType.EXAM,
-                "Пересдача Экзамен", ScheduleType.EXAM);
-        return scheduleTypeMap.get(lessonType);
-    }
-
-    private ScheduleType mapMephiLessonTypeToScheduleType(String lessonType) {
-        Map<String, ScheduleType> scheduleTypeMap = Map.of(
-                "Лек", ScheduleType.LECTURE,
-                "Пр", ScheduleType.PRACTICE,
-                "Лаб", ScheduleType.LAB,
-                "Резерв", ScheduleType.UNKNOWN
-        );
-        return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
-    }
-
-    private ScheduleType mapNsuLessonTypeToScheduleType(String lessonType) {
-        Map<String, ScheduleType> scheduleTypeMap = Map.of(
-                "пр", ScheduleType.PRACTICE,
-                "лек", ScheduleType.LECTURE,
-                "лаб", ScheduleType.LAB);
-        return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
-    }
-
-    private ScheduleType mapMiitLessonTypeToScheduleType(String lessonType) {
-        if (lessonType == null) return ScheduleType.UNKNOWN;
-
-        lessonType = lessonType.trim().toLowerCase();
-
-        Map<String, ScheduleType> scheduleTypeMap = Map.of(
-                "практическое занятие", ScheduleType.PRACTICE,
-                "практическое занятие практическое занятие", ScheduleType.PRACTICE,
-                "лекция", ScheduleType.LECTURE,
-                "лабораторная работа", ScheduleType.LAB
-        );
-
-        return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
 }
