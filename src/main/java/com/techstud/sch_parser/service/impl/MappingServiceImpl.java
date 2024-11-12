@@ -1109,9 +1109,9 @@ public class MappingServiceImpl implements MappingService {
      */
     private ScheduleType returnScheduleTypeSpbstu(String spbstuType){
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
-                "Практическое занятие", ScheduleType.PRACTICE,
-                "Лекция", ScheduleType.LECTURE,
-                "Лабораторная работа", ScheduleType.LAB);
+                "Практика", ScheduleType.PRACTICE,
+                "Лекции", ScheduleType.LECTURE,
+                "Лабораторные", ScheduleType.LAB);
         return scheduleTypeMap.getOrDefault(spbstuType, ScheduleType.UNKNOWN);
     }
 
@@ -1152,6 +1152,7 @@ public class MappingServiceImpl implements MappingService {
                     TimeSheet localTimeSheet = new TimeSheet(lesson.path("time_start").asText(), lesson.path("time_end").asText());
                     ScheduleObject scheduleObject = new ScheduleObject();
                     //ScheduleType
+                    log.info(lesson.path("typeObj").path("name").asText());
                     scheduleObject.setType(returnScheduleTypeSpbstu(
                             lesson.path("typeObj").path("name").asText()
                     ));
