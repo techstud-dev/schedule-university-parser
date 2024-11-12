@@ -36,7 +36,7 @@ public class SpbstuParser implements Parser {
     /**
      * @param task таска на парсинг расписания
      * @return возвращает объект расписания
-     * @throws Exception исключения в случае если парсинг вернет какие либо ошибки
+     * @throws Exception исключения в случае если парсинг вернет какие-либо ошибки
      */
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {

@@ -55,21 +55,6 @@ public class MappingServiceImpl implements MappingService {
     }
 
     @Override
-    public Schedule mapSpbstuScheduleByScheduleDay(List<Document> documents) {
-        Schedule scheduleSpbtstu = new Schedule();
-
-        scheduleSpbtstu.setEvenWeekSchedule(new HashMap<>());
-        scheduleSpbtstu.setOddWeekSchedule(new HashMap<>());
-
-        Map<DayOfWeek, ScheduleDay> evenWeekLessons = returnScheduleDayListFromResponseSpbstu(documents.get(0));
-        Map<DayOfWeek, ScheduleDay> oddWeekLessons = returnScheduleDayListFromResponseSpbstu(documents.get(1));
-
-        scheduleSpbtstu.setEvenWeekSchedule(evenWeekLessons);
-        scheduleSpbtstu.setOddWeekSchedule(oddWeekLessons);
-
-        return scheduleSpbtstu;
-    }
-    @Override
     public Schedule mapMephiToSchedule(List<Document> documents) {
         log.info("Start mapping MEPHI data to schedule");
         if (documents.size() < 2) {
@@ -683,7 +668,7 @@ public class MappingServiceImpl implements MappingService {
                 break;
             }
         }
-        scheduleDay.setDate(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
+        scheduleDay.setDateAsString(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
         scheduleDay.setLessons(timeSheetListMap);
         return scheduleDay;
     }
