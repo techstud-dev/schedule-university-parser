@@ -53,7 +53,7 @@ public class SpbstuParser implements Parser {
      * @return List<Document> возвращает html документы для дальнейшего парсинга
      * @throws IOException в случае если произошли какие то ошибки при парсинге
      */
-    public List<Document> returnListWeek(String scheduleUrl) throws IOException {
+    private List<Document> returnListWeek(String scheduleUrl) throws IOException {
         Document document = Jsoup.connect(scheduleUrl).get();
         log.info("Successfully fetched timetable page from SPBSTU");
 
