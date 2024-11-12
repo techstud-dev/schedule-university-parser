@@ -1,5 +1,7 @@
 package com.techstud.sch_parser.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techstud.sch_parser.model.*;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuScheduleItem;
@@ -27,12 +29,28 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.*;
 
 @Service
 @Slf4j
 public class MappingServiceImpl implements MappingService {
+    @Override
+    public Schedule mapSpbstuScheduleByScheduleDay(List<Document> documents) {
+        Schedule scheduleSpbtstu = new Schedule();
+
+        scheduleSpbtstu.setEvenWeekSchedule(new HashMap<>());
+        scheduleSpbtstu.setOddWeekSchedule(new HashMap<>());
+
+        Map<DayOfWeek, ScheduleDay> evenWeekLessons = returnScheduleDayListFromResponseSpbstu(documents.get(0));
+        Map<DayOfWeek, ScheduleDay> oddWeekLessons = returnScheduleDayListFromResponseSpbstu(documents.get(1));
+
+        scheduleSpbtstu.setEvenWeekSchedule(evenWeekLessons);
+        scheduleSpbtstu.setOddWeekSchedule(oddWeekLessons);
+
+        return scheduleSpbtstu;
+    }
 
     @Override
     public Schedule mapMephiToSchedule(List<Document> documents) {
@@ -1067,5 +1085,131 @@ public class MappingServiceImpl implements MappingService {
                 "Лекция", ScheduleType.LECTURE,
                 "Лабораторная работа", ScheduleType.LAB);
         return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
+    }
+
+    //Spbstu
+    /**
+     * @param actualWeekList актуальный спсиок дней недели в результате парсинга
+     * @return List<DayOfWeek> возвращаемый список с недостающими днями недели
+     */
+    private List<DayOfWeek> returnMissingDayOfTheWeek(List<DayOfWeek> actualWeekList){
+        LinkedList<DayOfWeek> weekListConstant = IntStream
+                .rangeClosed(1, 7)
+                .mapToObj(DayOfWeek::of)
+                .collect(Collectors.toCollection(LinkedList::new));
+
+        return weekListConstant.stream()
+                .filter(element -> !actualWeekList.contains(element))
+                .toList();
+    }
+
+    /**
+     * @param spbstuType входная строка
+     * @return ScheduleType возвращаемый тип занятия
+     */
+    private ScheduleType returnScheduleTypeSpbstu(String spbstuType){
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "Практическое занятие", ScheduleType.PRACTICE,
+                "Лекция", ScheduleType.LECTURE,
+                "Лабораторная работа", ScheduleType.LAB);
+        return scheduleTypeMap.getOrDefault(spbstuType, ScheduleType.UNKNOWN);
+    }
+
+    /**
+     * @param elementsHTMLResponse входной список элементов парсинга
+     * @return JsonNode возвращаемый узел json документа
+     */
+    private JsonNode returnJsonNodeFromResponseSpbstu(Elements elementsHTMLResponse){
+        return elementsHTMLResponse.stream()
+                .map(element -> element.html().trim())
+                .filter(scriptContent -> scriptContent.startsWith("window.__INITIAL_STATE__ ="))
+                .findFirst()
+                .map(element -> {
+                    try{
+                        return new ObjectMapper().readTree(element
+                                .replace("window.__INITIAL_STATE__ =", "")
+                                .replaceAll(";$", "")
+                                .trim()).path("lessons").path("data");
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }).orElseThrow(() -> new RuntimeException("Null response body from API."));
+    }
+
+    /**
+     * @param responseFromHTML входной узел json документа из ответа API
+     * @return List<ScheduleDay> возвращаемый список SD
+     */
+    private List<ScheduleDay> returnObjectParsingListFromResponseSpbstu(JsonNode responseFromHTML){
+        List<ScheduleDay> objectParsing = new LinkedList<>();
+        responseFromHTML.fields().forEachRemaining(field -> {
+            field.getValue().forEach(day -> {
+                ScheduleDay scheduleDay = new ScheduleDay();
+                Map<TimeSheet, List<ScheduleObject>> mappedStruct = new LinkedHashMap<>();
+                String dateForObject = day.path("date").asText();
+                JsonNode lessonArray = day.path("lessons");
+                lessonArray.forEach(lesson -> {
+                    TimeSheet localTimeSheet = new TimeSheet(lesson.path("time_start").asText(), lesson.path("time_end").asText());
+                    ScheduleObject scheduleObject = new ScheduleObject();
+                    //ScheduleType
+                    scheduleObject.setType(returnScheduleTypeSpbstu(
+                            lesson.path("typeObj").path("name").asText()
+                    ));
+                    //Name
+                    scheduleObject.setName(lesson.path("subject").asText());
+                    //Teachers
+                    lesson.path("teachers").forEach(teacher -> {scheduleObject.setTeacher(teacher.path("full_name").asText());});
+                    //Auditor
+                    lesson.path("auditories").forEach(auditor -> {scheduleObject.setPlace(auditor.path("name").asText());});
+                    //Groups
+                    List<String> groups = new ArrayList<>();
+                    lesson.path("groups").forEach(group -> {groups.add(group.path("name").asText());});
+                    scheduleObject.setGroups(groups);
+                    mappedStruct.computeIfAbsent(localTimeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                });
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                try {
+                    Date date = formatter.parse(dateForObject);
+                    scheduleDay.setDate(date);
+                } catch (ParseException e) {
+                    log.error(e.getMessage());
+                }
+                scheduleDay.setLessons(mappedStruct);
+                objectParsing.add(scheduleDay);
+            });
+        });
+        return objectParsing;
+    }
+
+    /**
+     * @param documentResponse html ответ от API
+     * @return Map<DayOfWeek, ScheduleDay> структура возвращающая день недели и экземпляр учебного дня
+     */
+    private Map<DayOfWeek, ScheduleDay> returnScheduleDayListFromResponseSpbstu(Document documentResponse){
+        Map<DayOfWeek, ScheduleDay> weekScheduleDayMap = new LinkedHashMap<>();
+        List<DayOfWeek> actualWeekList = new LinkedList<>();
+
+        returnObjectParsingListFromResponseSpbstu(
+                returnJsonNodeFromResponseSpbstu(documentResponse.select("script"))
+        ).forEach(data -> {
+            try{
+                DayOfWeek dayOfWeek = data
+                        .getDate()
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .getDayOfWeek();
+                weekScheduleDayMap.put(dayOfWeek, data);
+                actualWeekList.add(dayOfWeek);
+            } catch(Exception e){
+                log.error(e.getMessage());
+                throw new RuntimeException(e.getMessage());
+            }
+        });
+
+        returnMissingDayOfTheWeek(actualWeekList)
+                .forEach(day -> weekScheduleDayMap.put(day, new ScheduleDay()));
+
+        return weekScheduleDayMap;
     }
 }
