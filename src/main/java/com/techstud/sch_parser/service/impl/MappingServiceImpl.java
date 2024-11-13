@@ -1093,10 +1093,10 @@ public class MappingServiceImpl implements MappingService {
      * @return List<DayOfWeek> возвращаемый список с недостающими днями недели
      */
     private List<DayOfWeek> returnMissingDayOfTheWeek(List<DayOfWeek> actualWeekList){
-        LinkedList<DayOfWeek> weekListConstant = IntStream
+        List<DayOfWeek> weekListConstant = IntStream
                 .rangeClosed(1, 7)
                 .mapToObj(DayOfWeek::of)
-                .collect(Collectors.toCollection(LinkedList::new));
+                .toList();
 
         return weekListConstant.stream()
                 .filter(element -> !actualWeekList.contains(element))
@@ -1152,7 +1152,6 @@ public class MappingServiceImpl implements MappingService {
                     TimeSheet localTimeSheet = new TimeSheet(lesson.path("time_start").asText(), lesson.path("time_end").asText());
                     ScheduleObject scheduleObject = new ScheduleObject();
                     //ScheduleType
-                    log.info(lesson.path("typeObj").path("name").asText());
                     scheduleObject.setType(returnScheduleTypeSpbstu(
                             lesson.path("typeObj").path("name").asText()
                     ));

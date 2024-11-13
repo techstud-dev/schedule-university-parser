@@ -49,13 +49,13 @@ public class SpbstuParser implements Parser {
     }
 
     /**
-     * @param scheduleUrl
+     * @param scheduleUrl первая ссылка для получения первого ответа
      * @return List<Document> возвращает html документы для дальнейшего парсинга
-     * @throws IOException в случае если произошли какие то ошибки при парсинге
+     * @throws IOException в случае если произошли какие-то ошибки при парсинге
      */
     private List<Document> returnListWeek(String scheduleUrl) throws IOException {
         Document document = Jsoup.connect(scheduleUrl).get();
-        log.info("Successfully fetched timetable page from SPBSTU");
+        log.info("Successfully fetched timetable page from SPBSTU firstLink {}", scheduleUrl);
 
         List<Document> docs = new ArrayList<>();
 
@@ -80,8 +80,8 @@ public class SpbstuParser implements Parser {
         String oddURL = scheduleUrl + "?date=" + week.dateStart;
         String evenURL = scheduleUrl + "?date=" + week.dateEnd.plusDays(1L);
 
-        log.info("Successfully fetched timetable page from SPBSTU {}", oddURL);
-        log.info("Successfully fetched timetable page from SPBSTU {}", evenURL);
+        log.info("Successfully fetched timetable page from SPBSTU oddWeek {}", oddURL);
+        log.info("Successfully fetched timetable page from SPBSTU evenWeek {}", evenURL);
 
         Document oddDocument = Jsoup.connect(oddURL).get();
         Document evenDocument = Jsoup.connect(evenURL).get();
