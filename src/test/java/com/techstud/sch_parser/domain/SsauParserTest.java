@@ -30,7 +30,6 @@ public class SsauParserTest {
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
                 underTest.parseSchedule(parsingTask));
-        log.info(result);
         assertThat(result).isNotEmpty();
     }
 
@@ -41,7 +40,6 @@ public class SsauParserTest {
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
                 underTest.parseSchedule(parsingTask));
-        log.info(result);
         assertThat(result).isNotNull();
     }
 
@@ -52,7 +50,6 @@ public class SsauParserTest {
         Parser underTest = new SsauParser(mappingService);
         Optional<Schedule> result = Optional.ofNullable(
                 underTest.parseSchedule(parsingTask));
-        log.info(result);
         assertThat(result).isNotNull();
     }
 }

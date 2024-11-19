@@ -804,24 +804,29 @@ public class MappingServiceImpl implements MappingService {
         List<Element> ssauTimeSheets = element.getElementsByClass("schedule__time");
         List<Element> ssauDayOfWeek = scheduleItemElements.subList(1, 7);
         List<Element> ssauLessons = scheduleItemElements.subList(7, scheduleItemElements.size());
+
         ScheduleDay scheduleDay = new ScheduleDay();
         Map<TimeSheet, List<ScheduleObject>> timeSheetListMap = new LinkedHashMap<>();
+
         for (int i = 0; i < ssauTimeSheets.size(); i++) {
-            if (dayOfWeek.equals(DayOfWeek.SUNDAY)) {
-                timeSheetListMap.put(new TimeSheet(ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(0).text(),
-                        ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(1).text()), new ArrayList<>());
-                continue;
+            String startTime = ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(0).text();
+            String endTime = ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(1).text();
+            TimeSheet timeSheet = new TimeSheet(startTime, endTime);
+
+            int currentElement = (i * ssauDayOfWeek.size()) + dayOfWeek.getValue() - 1;
+
+            List<ScheduleObject> scheduleObjects;
+            if (currentElement < ssauLessons.size()) {
+                scheduleObjects = getSsauScheduleObject(ssauLessons.get(currentElement));
+            } else {
+                scheduleObjects = new ArrayList<>();
             }
-            int currentElement = (i * ssauDayOfWeek.size() + dayOfWeek.getValue() - 1);
-            try {
-                timeSheetListMap.put(new TimeSheet(ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(0).text(),
-                        ssauTimeSheets.get(i).getElementsByClass("schedule__time-item").get(1).text()), getSsauScheduleObject(ssauLessons.get(currentElement)));
-            } catch (IndexOutOfBoundsException e) {
-                break;
-            }
+
+            timeSheetListMap.put(timeSheet, scheduleObjects);
         }
         scheduleDay.setDateAsString(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
         scheduleDay.setLessons(timeSheetListMap);
+
         return scheduleDay;
     }
 
