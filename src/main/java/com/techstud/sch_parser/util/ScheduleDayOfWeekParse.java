@@ -2,11 +2,9 @@ package com.techstud.sch_parser.util;
 
 import java.io.Serializable;
 import java.time.DayOfWeek;
-import java.util.Arrays;
-import java.util.List;
 
 public class ScheduleDayOfWeekParse implements Serializable {
-    public static DayOfWeek staticParseDayOfWeek(String dayName) {
+    public static DayOfWeek parseDayOfWeek(String dayName) {
         return switch (dayName.toLowerCase()) {
             case "понедельник" -> java.time.DayOfWeek.MONDAY;
             case "вторник" -> java.time.DayOfWeek.TUESDAY;
@@ -19,7 +17,7 @@ public class ScheduleDayOfWeekParse implements Serializable {
         };
     }
 
-    public static DayOfWeek staticUneconParseDayOfWeek(String dayName) {
+    public static DayOfWeek uneconParseDayOfWeek(String dayName) {
         if (dayName.contains(" ")) {
             dayName = dayName.substring(dayName.lastIndexOf(" ") + 1);
         }
@@ -35,7 +33,7 @@ public class ScheduleDayOfWeekParse implements Serializable {
         };
     }
 
-    public static DayOfWeek staticMiitParseDayOfWeeK(String dayName) {
+    public static DayOfWeek miitParseDayOfWeeK(String dayName) {
         return switch(dayName) {
             case "Понедельник" -> DayOfWeek.MONDAY;
             case "Вторник" -> DayOfWeek.TUESDAY;

@@ -28,5 +28,5 @@ public interface MappingService {
 
     Schedule mapMiitToSchedule(List<Document> documents);
 
-    public Schedule mapSpbstuScheduleByScheduleDay(List<Document> documents);
+    Schedule mapSpbstuScheduleByScheduleDay(List<Document> documents);
 }

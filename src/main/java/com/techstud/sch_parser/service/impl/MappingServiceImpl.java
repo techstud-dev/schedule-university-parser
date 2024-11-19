@@ -203,7 +203,7 @@ public class MappingServiceImpl implements MappingService {
                         String dayText = nextRow.select(".day").text().trim();
 
                         try {
-                            currentDayOfWeek = staticUneconParseDayOfWeek(dayText);
+                            currentDayOfWeek = uneconParseDayOfWeek(dayText);
                             evenWeekDay = new ScheduleDay();
                             oddWeekDay = new ScheduleDay();
                             evenWeekSchedule.put(currentDayOfWeek, evenWeekDay);
@@ -287,7 +287,7 @@ public class MappingServiceImpl implements MappingService {
         for (int i = 1; i < dayHeaders.size(); i++) {
             String dayOfWeekText = dayHeaders.get(i).text().split(" ")[0].trim();
             int finalI = i;
-            Optional.ofNullable(staticMiitParseDayOfWeeK(dayOfWeekText))
+            Optional.ofNullable(miitParseDayOfWeeK(dayOfWeekText))
                     .ifPresentOrElse(
                             day -> dayOfWeekMapping.put(finalI - 1, day),
                             () -> log.warn("Could not parse day of week for text: {}", dayOfWeekText)
@@ -377,7 +377,7 @@ public class MappingServiceImpl implements MappingService {
         Elements scheduleDays = document.getElementsByTag("tbody");
 
         scheduleDays.forEach(day -> {
-            DayOfWeek dayOfWeek = staticParseDayOfWeek(day.getElementsByClass("kt-font-dark").text().toLowerCase());
+            DayOfWeek dayOfWeek = parseDayOfWeek(day.getElementsByClass("kt-font-dark").text().toLowerCase());
             schedule.put(dayOfWeek, parsePgupsScheduleDay(day));
         });
 
@@ -742,7 +742,7 @@ public class MappingServiceImpl implements MappingService {
         var currentDayOfWeek = new Object() { DayOfWeek value = null; };
         elements.forEach(element -> {
             if (element.hasClass("lesson-wday")) {
-                currentDayOfWeek.value = staticParseDayOfWeek(element.text());
+                currentDayOfWeek.value = parseDayOfWeek(element.text());
             } else if (element.hasClass("list-group") && currentDayOfWeek.value != null) {
                 weekSchedule.put(currentDayOfWeek.value, getMephiScheduleDay(element));
             }
@@ -1057,7 +1057,7 @@ public class MappingServiceImpl implements MappingService {
      */
     private List<ScheduleDay> returnObjectParsingListFromResponseSpbstu(JsonNode responseFromHTML){
         List<ScheduleDay> objectParsing = new LinkedList<>();
-        responseFromHTML.fields().forEachRemaining(field -> {
+        responseFromHTML.fields().forEachRemaining(field ->
             field.getValue().forEach(day -> {
                 ScheduleDay scheduleDay = new ScheduleDay();
                 Map<TimeSheet, List<ScheduleObject>> mappedStruct = new LinkedHashMap<>();
@@ -1070,10 +1070,10 @@ public class MappingServiceImpl implements MappingService {
                             lesson.path("typeObj").path("name").asText()
                     ));
                     scheduleObject.setName(lesson.path("subject").asText());
-                    lesson.path("teachers").forEach(teacher -> {scheduleObject.setTeacher(teacher.path("full_name").asText());});
-                    lesson.path("auditories").forEach(auditor -> {scheduleObject.setPlace(auditor.path("name").asText());});
+                    lesson.path("teachers").forEach(teacher -> scheduleObject.setTeacher(teacher.path("full_name").asText()));
+                    lesson.path("auditories").forEach(auditor -> scheduleObject.setPlace(auditor.path("name").asText()));
                     List<String> groups = new ArrayList<>();
-                    lesson.path("groups").forEach(group -> {groups.add(group.path("name").asText());});
+                    lesson.path("groups").forEach(group -> groups.add(group.path("name").asText()));
                     scheduleObject.setGroups(groups);
                     mappedStruct.computeIfAbsent(localTimeSheet, k -> new ArrayList<>()).add(scheduleObject);
                 });
@@ -1086,8 +1086,8 @@ public class MappingServiceImpl implements MappingService {
                 }
                 scheduleDay.setLessons(mappedStruct);
                 objectParsing.add(scheduleDay);
-            });
-        });
+            })
+        );
         return objectParsing;
     }
 
