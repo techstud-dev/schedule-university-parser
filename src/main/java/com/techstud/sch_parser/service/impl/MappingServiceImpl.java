@@ -249,7 +249,15 @@ public class MappingServiceImpl implements MappingService {
         var dayOfWeekMapping = extractMiitDayOfWeekMapping(rows.get(0));
         var allTimeSheets = extractAllMiitTimeSheets(rows);
 
-        rows.stream().skip(1).forEach(row -> processMiitLessonRow(row, weekSchedule, dayOfWeekMapping, allTimeSheets));
+        weekSchedule.forEach((day, scheduleDay) ->
+                allTimeSheets.forEach(timeSheet ->
+                        scheduleDay.getLessons().putIfAbsent(timeSheet, new ArrayList<>())
+                )
+        );
+
+        rows.stream().skip(1).forEach(row ->
+                processMiitLessonRow(row, weekSchedule, dayOfWeekMapping)
+        );
 
         return weekSchedule;
     }
@@ -275,12 +283,13 @@ public class MappingServiceImpl implements MappingService {
                 .skip(1)
                 .map(row -> getMiitTimeSheet(row.select("td").first()))
                 .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(TimeSheet::getFrom))
                 .distinct()
                 .toList();
     }
 
     private void processMiitLessonRow(Element lessonRow, Map<DayOfWeek, ScheduleDay> weekSchedule,
-                                      Map<Integer, DayOfWeek> dayOfWeekMapping, List<TimeSheet> allTimeSheets) {
+                                      Map<Integer, DayOfWeek> dayOfWeekMapping) {
         Elements cells = lessonRow.select("td");
         TimeSheet timeSheet = getMiitTimeSheet(cells.first());
 
@@ -300,7 +309,7 @@ public class MappingServiceImpl implements MappingService {
             ScheduleObject scheduleObject = getMiitScheduleObject(lessonCell);
             weekSchedule.get(dayOfWeek)
                     .getLessons()
-                    .computeIfAbsent(timeSheet, ts -> new ArrayList<>())
+                    .get(timeSheet)
                     .add(scheduleObject);
         }
     }
