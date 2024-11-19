@@ -55,7 +55,7 @@ public class MappingServiceImpl implements MappingService {
 
     @Override
     public Schedule mapMephiToSchedule(List<Document> documents) {
-        log.info("Starting parse MEPHI schedule");
+        log.info("Start mapping MEPHI data to schedule");
 
         if (documents.size() < 2) {
             throw new IllegalArgumentException("Not enought documents for even and odd weeks");
@@ -359,7 +359,7 @@ public class MappingServiceImpl implements MappingService {
                 .ifPresent(el -> scheduleObject.setName(el.ownText()));
 
         String typeText = lessonElement.select(".timetable__grid-text_gray").text().trim();
-        scheduleObject.setType(staticMapMiitLessonTypeToScheduleType(typeText));
+        scheduleObject.setType(mapMiitLessonTypeToScheduleType(typeText));
 
         Optional.ofNullable(lessonElement.selectFirst("a.icon-academic-cap"))
                 .ifPresent(el -> scheduleObject.setTeacher(el.ownText()));
@@ -564,7 +564,7 @@ public class MappingServiceImpl implements MappingService {
             String place = lesson.select(".room a").text().trim();
 
             ScheduleObject scheduleObject = new ScheduleObject();
-            scheduleObject.setType(staticMapNsuLessonTypeToScheduleType(type));
+            scheduleObject.setType(mapNsuLessonTypeToScheduleType(type));
             scheduleObject.setName(subject.isEmpty() ? null : subject);
             scheduleObject.setPlace(place.isEmpty() ? null : place);
             scheduleObject.setTeacher(teacher.isEmpty() ? null : teacher);
@@ -720,7 +720,7 @@ public class MappingServiceImpl implements MappingService {
                 type = titleElement != null && titleElement.text().contains("Reserve") ? "Reserve" : "UNKNOWN";
             }
 
-            scheduleObject.setType(staticMapMephiLessonTypeToScheduleType(type));
+            scheduleObject.setType(mapMephiLessonTypeToScheduleType(type));
             scheduleObject.setName(lessonName);
             scheduleObject.setTeacher(teachers.isEmpty() ? null : String.join(", ", teachers));
             scheduleObject.setPlace(place);
@@ -984,7 +984,7 @@ public class MappingServiceImpl implements MappingService {
         }
 
         if (lessonDay.getWorkPlan() != null && lessonDay.getWorkPlan().getLessonTypes() != null) {
-            scheduleObject.setType(staticMapSseuLessonTypeToScheduleType(lessonDay.getWorkPlan().getLessonTypes().getName()));
+            scheduleObject.setType(mapSseuLessonTypeToScheduleType(lessonDay.getWorkPlan().getLessonTypes().getName()));
         }
 
         if (lessonDay.getSubject() != null && !lessonDay.getSubject().isEmpty()) {
@@ -1066,7 +1066,7 @@ public class MappingServiceImpl implements MappingService {
                 lessonArray.forEach(lesson -> {
                     TimeSheet localTimeSheet = new TimeSheet(lesson.path("time_start").asText(), lesson.path("time_end").asText());
                     ScheduleObject scheduleObject = new ScheduleObject();
-                    scheduleObject.setType(staticReturnScheduleTypeSpbstu(
+                    scheduleObject.setType(returnScheduleTypeSpbstu(
                             lesson.path("typeObj").path("name").asText()
                     ));
                     scheduleObject.setName(lesson.path("subject").asText());

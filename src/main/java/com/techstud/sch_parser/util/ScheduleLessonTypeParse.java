@@ -5,9 +5,9 @@ import com.techstud.sch_parser.model.ScheduleType;
 import java.io.Serializable;
 import java.util.Map;
 
-public class ScheduleLessonTypeParse implements Serializable {
+public class ScheduleLessonTypeParse {
 
-    public static ScheduleType staticMapSseuLessonTypeToScheduleType(String lessonType) {
+    public static ScheduleType mapSseuLessonTypeToScheduleType(String lessonType) {
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
                 "Лекции", ScheduleType.LECTURE,
                 "Практические", ScheduleType.PRACTICE,
@@ -17,7 +17,7 @@ public class ScheduleLessonTypeParse implements Serializable {
         return scheduleTypeMap.get(lessonType);
     }
 
-    public static ScheduleType staticMapMephiLessonTypeToScheduleType(String lessonType) {
+    public static ScheduleType mapMephiLessonTypeToScheduleType(String lessonType) {
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
                 "Лек", ScheduleType.LECTURE,
                 "Пр", ScheduleType.PRACTICE,
@@ -27,7 +27,7 @@ public class ScheduleLessonTypeParse implements Serializable {
         return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
 
-    public static ScheduleType staticMapNsuLessonTypeToScheduleType(String lessonType) {
+    public static ScheduleType mapNsuLessonTypeToScheduleType(String lessonType) {
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
                 "пр", ScheduleType.PRACTICE,
                 "лек", ScheduleType.LECTURE,
@@ -35,7 +35,7 @@ public class ScheduleLessonTypeParse implements Serializable {
         return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
 
-    public static ScheduleType staticMapMiitLessonTypeToScheduleType(String lessonType) {
+    public static ScheduleType mapMiitLessonTypeToScheduleType(String lessonType) {
         if (lessonType == null) return ScheduleType.UNKNOWN;
 
         lessonType = lessonType.trim().toLowerCase();
@@ -54,7 +54,7 @@ public class ScheduleLessonTypeParse implements Serializable {
      * @param spbstuType входная строка
      * @return ScheduleType возвращаемый тип занятия
      */
-    public static ScheduleType staticReturnScheduleTypeSpbstu(String spbstuType){
+    public static ScheduleType returnScheduleTypeSpbstu(String spbstuType){
         Map<String, ScheduleType> scheduleTypeMap = Map.of(
                 "Практика", ScheduleType.PRACTICE,
                 "Лекции", ScheduleType.LECTURE,
