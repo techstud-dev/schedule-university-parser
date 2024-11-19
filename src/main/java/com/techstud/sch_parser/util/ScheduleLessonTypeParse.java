@@ -49,4 +49,16 @@ public class ScheduleLessonTypeParse implements Serializable {
 
         return scheduleTypeMap.getOrDefault(lessonType, ScheduleType.UNKNOWN);
     }
+
+    /**
+     * @param spbstuType входная строка
+     * @return ScheduleType возвращаемый тип занятия
+     */
+    public static ScheduleType staticReturnScheduleTypeSpbstu(String spbstuType){
+        Map<String, ScheduleType> scheduleTypeMap = Map.of(
+                "Практика", ScheduleType.PRACTICE,
+                "Лекции", ScheduleType.LECTURE,
+                "Лабораторные", ScheduleType.LAB);
+        return scheduleTypeMap.getOrDefault(spbstuType, ScheduleType.UNKNOWN);
+    }
 }
