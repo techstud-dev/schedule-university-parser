@@ -489,7 +489,20 @@ public class MappingServiceImpl implements MappingService {
                 lastTimeSheet.setTo(currentSheet.getFrom());
             }
 
+            if (row.nextElementSibling() == null) {
+                LocalTime fromTime = currentSheet.getFrom();
+                LocalTime toTime = fromTime.plusMinutes(110);
+                currentSheet.setTo(LocalTime.parse(toTime.format(DateTimeFormatter.ofPattern("HH:mm"))));
+            }
+
             lastTimeSheet = currentSheet;
+
+            for (DayOfWeek day : daysOfWeek) {
+                evenWeekSchedule.get(day).getLessons()
+                        .computeIfAbsent(currentSheet, k -> new ArrayList<>());
+                oddWeekSchedule.get(day).getLessons()
+                        .computeIfAbsent(currentSheet, k -> new ArrayList<>());
+            }
 
             Elements dayCells = row.select("td:not(:first-child)");
             int dayIndex = 0;
@@ -504,15 +517,15 @@ public class MappingServiceImpl implements MappingService {
                     for (ScheduleObject scheduleObject : scheduleObjects) {
                         if (weekIndicator.isEmpty()) {
                             evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .get(currentSheet).add(scheduleObject);
                             oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .get(currentSheet).add(scheduleObject);
                         } else if (weekIndicator.equals("Четная")) {
                             evenWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .get(currentSheet).add(scheduleObject);
                         } else if (weekIndicator.equals("Нечетная")) {
                             oddWeekSchedule.get(daysOfWeek[dayIndex]).getLessons()
-                                    .computeIfAbsent(currentSheet, k -> new ArrayList<>()).add(scheduleObject);
+                                    .get(currentSheet).add(scheduleObject);
                         }
                     }
                 }
