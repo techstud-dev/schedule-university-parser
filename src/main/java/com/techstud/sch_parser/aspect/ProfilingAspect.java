@@ -1,4 +1,4 @@
-package com.techstud.sch_parser.aspcet;
+package com.techstud.sch_parser.aspect;
 
 import com.google.common.base.Stopwatch;
 import lombok.extern.slf4j.Slf4j;

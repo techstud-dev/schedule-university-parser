@@ -22,7 +22,7 @@ public class NsuParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("24513.2");
         Parser underTest = new NsuParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -30,7 +30,7 @@ public class NsuParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("24514.1");
         Parser underTest = new NsuParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class NsuParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("23514.2");
         Parser underTest = new NsuParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class NsuParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("21504.1");
         Parser underTest = new NsuParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 
     @Test
@@ -54,6 +54,6 @@ public class NsuParserTest {
         ParsingTask parsingTask = new ParsingTask();
         parsingTask.setGroupId("23503.2");
         Parser underTest = new NsuParser(mappingService);
-        System.out.println(underTest.parseSchedule(parsingTask));
+        underTest.parseSchedule(parsingTask);
     }
 }
