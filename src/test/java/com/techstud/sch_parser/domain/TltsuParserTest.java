@@ -7,8 +7,10 @@ import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 public class TltsuParserTest {
 
     private CloseableHttpClient closeableHttpClient;

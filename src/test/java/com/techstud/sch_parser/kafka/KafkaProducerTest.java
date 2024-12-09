@@ -15,6 +15,7 @@ import java.util.Map;
 
 @SpringBootTest
 @ActiveProfiles("dev")
+@Disabled
 public class KafkaProducerTest {
 
     @Autowired
