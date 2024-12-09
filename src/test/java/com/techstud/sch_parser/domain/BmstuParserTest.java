@@ -29,7 +29,6 @@ public class BmstuParserTest {
         parsingTask.setGroupId("815c1ebd-bc7e-11ee-b32d-df9b99f124c0");
         Parser parser = new BmstuParser(closeableHttpClient, mappingService);
         Schedule schedule = parser.parseSchedule(parsingTask);
-        System.out.println(schedule.toString());
         Assertions.assertNotNull(schedule.toString());
 
     }
@@ -40,7 +39,6 @@ public class BmstuParserTest {
         parsingTask.setGroupId("815c1ebd-bc7e-11ee-b32d-df9b99f124c0");
         Parser parser = new BmstuParser(closeableHttpClient, mappingService);
         Schedule schedule = parser.parseSchedule(parsingTask);
-        System.out.println(schedule.toString());
         Assertions.assertNotNull(schedule.toString());
     }
 }

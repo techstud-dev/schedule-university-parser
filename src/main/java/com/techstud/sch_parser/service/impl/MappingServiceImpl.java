@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.techstud.sch_parser.mapper.ScheduleMapper.mapToFrontendFormat;
 import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.*;
 import static com.techstud.sch_parser.util.ScheduleLessonTypeParse.*;
 
@@ -47,8 +48,8 @@ public class MappingServiceImpl implements MappingService {
         Map<DayOfWeek, ScheduleDay> evenWeekLessons = returnScheduleDayListFromResponseSpbstu(documents.get(0));
         Map<DayOfWeek, ScheduleDay> oddWeekLessons = returnScheduleDayListFromResponseSpbstu(documents.get(1));
 
-        scheduleSpbtstu.setEvenWeekSchedule(evenWeekLessons);
-        scheduleSpbtstu.setOddWeekSchedule(oddWeekLessons);
+        scheduleSpbtstu.setOddWeekSchedule(mapToFrontendFormat(oddWeekLessons, false));
+        scheduleSpbtstu.setEvenWeekSchedule(mapToFrontendFormat(evenWeekLessons, true));
 
         return scheduleSpbtstu;
     }
@@ -68,8 +69,8 @@ public class MappingServiceImpl implements MappingService {
         var oddWeekSchedule = getMephiWeekSchedule(oddWeekDocument);
 
         var schedule = new Schedule();
-        schedule.setEvenWeekSchedule(evenWeekSchedule);
-        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
         schedule.setSnapshotDate(new Date());
 
         log.info("MEPHI mapping {} completed", schedule);
@@ -90,8 +91,8 @@ public class MappingServiceImpl implements MappingService {
         oddWeekSchedule = fillSseuSchedule(oddWeekSseuSchedule, oddWeekSchedule);
 
         schedule.setSnapshotDate(new Date());
-        schedule.setEvenWeekSchedule(evenWeekSchedule);
-        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
         log.info("Mapping SSEU data to schedule {} finished", schedule);
         return schedule;
     }
@@ -114,8 +115,8 @@ public class MappingServiceImpl implements MappingService {
         Map<DayOfWeek, ScheduleDay> evenSchedule = getSsauSchedule(evenElement);
         Map<DayOfWeek, ScheduleDay> oddSchedule = getSsauSchedule(oddElement);
         Schedule schedule = new Schedule();
-        schedule.setEvenWeekSchedule(evenSchedule);
-        schedule.setOddWeekSchedule(oddSchedule);
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenSchedule, true));
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddSchedule, false));
         schedule.setSnapshotDate(new Date());
         log.info("Mapping SSAU data to schedule {} finished", schedule);
         return schedule;
@@ -143,8 +144,8 @@ public class MappingServiceImpl implements MappingService {
             }
         }
 
-        schedule.setEvenWeekSchedule(evenWeekSchedule);
-        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
         log.info("Mapping BMSTU data to schedule {} finished", schedule);
         return schedule;
     }
@@ -170,8 +171,8 @@ public class MappingServiceImpl implements MappingService {
             lastTimeSheet = getNsuScheduleDay(row, evenWeekSchedule, oddWeekSchedule, daysOfWeek, lastTimeSheet);
         }
 
-        schedule.setEvenWeekSchedule(evenWeekSchedule);
-        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
         log.info("Mapping NSU data to schedule {} finished", schedule);
         return schedule;
     }
@@ -218,8 +219,8 @@ public class MappingServiceImpl implements MappingService {
             }
         }
 
-        schedule.setEvenWeekSchedule(evenWeekSchedule);
-        schedule.setOddWeekSchedule(oddWeekSchedule);
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
         log.info("Mapping UNECON data to schedule {} finished", schedule);
         return schedule;
     }
@@ -230,27 +231,29 @@ public class MappingServiceImpl implements MappingService {
 
         Schedule schedule = new Schedule();
         schedule.setSnapshotDate(new Date());
-        schedule.setEvenWeekSchedule(parsePgupsSchedule(documents.get(0)));
-        schedule.setOddWeekSchedule(parsePgupsSchedule(documents.get(1)));
+
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = parsePgupsSchedule(documents.get(0));
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = parsePgupsSchedule(documents.get(1));
+
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
 
         log.info("Mapping PGUPS data to schedule {} finished", schedule);
         return schedule;
     }
 
     @Override
-    public Schedule mapMiitToSchedule(List<Document> documents) {
+    public Schedule mapMiitToSchedule(List<Document> weekDocuments) {
         log.info("Start mapping MIIT data to schedule");
 
+        Map<DayOfWeek, ScheduleDay> oddWeekSchedule = parseMiitWeekSchedule(weekDocuments.get(0));
+        Map<DayOfWeek, ScheduleDay> evenWeekSchedule = parseMiitWeekSchedule(weekDocuments.get(1));
+
         Schedule schedule = new Schedule();
-        if (documents == null || documents.size() < 2) {
-            log.error("Insufficient documents to parse even and odd week schedules");
-            return schedule;
-        }
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
 
-        schedule.setEvenWeekSchedule(parseMiitWeekSchedule(documents.get(0)));
-        schedule.setOddWeekSchedule(parseMiitWeekSchedule(documents.get(1)));
-
-        log.info("Mapping MIIT data to schedule {} finished.", schedule);
+        log.info("Mapping MIIT data to schedule {} finished", schedule);
         return schedule;
     }
 
@@ -594,8 +597,8 @@ public class MappingServiceImpl implements MappingService {
             evenWeekSchedule = getWeekScheduleFromTltsu(evenSchedule);
         }
 
-        schedule.setOddWeekSchedule(oddWeekSchedule);
-        schedule.setEvenWeekSchedule(evenWeekSchedule);
+        schedule.setOddWeekSchedule(mapToFrontendFormat(oddWeekSchedule, false));
+        schedule.setEvenWeekSchedule(mapToFrontendFormat(evenWeekSchedule, true));
         return schedule;
     }
 

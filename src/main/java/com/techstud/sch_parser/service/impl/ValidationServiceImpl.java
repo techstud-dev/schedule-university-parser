@@ -3,17 +3,14 @@ package com.techstud.sch_parser.service.impl;
 import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.exception.RequestException;
 import com.techstud.sch_parser.model.Schedule;
-import com.techstud.sch_parser.model.ScheduleDay;
+import com.techstud.sch_parser.model.api.response.mapping.LessonDto;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.ValidationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -21,17 +18,12 @@ public class ValidationServiceImpl implements ValidationService {
 
     @Override
     public void validateSchedule(Schedule schedule) throws EmptyScheduleException {
-        if (isScheduleEmpty(schedule)) {
+        if (isScheduleCompletelyEmpty(schedule)) {
             logAndThrowEmptyScheduleException();
         }
 
-        Set<DayOfWeek> emptyEvenWeekDays = findEmptyDays(schedule.getEvenWeekSchedule());
-        Set<DayOfWeek> emptyOddWeekDays = findEmptyDays(schedule.getOddWeekSchedule());
-
-        if (isCompletelyEmpty(emptyEvenWeekDays, schedule.getOddWeekSchedule().keySet()) &&
-                isCompletelyEmpty(emptyOddWeekDays, schedule.getEvenWeekSchedule().keySet())) {
-            logAndThrowEmptyScheduleException();
-        }
+        validateWeekDays(schedule.getEvenWeekSchedule(), "even");
+        validateWeekDays(schedule.getOddWeekSchedule(), "odd");
     }
 
     @Override
@@ -52,30 +44,25 @@ public class ValidationServiceImpl implements ValidationService {
         }
     }
 
-    private boolean isScheduleEmpty(Schedule schedule) {
-        return schedule == null ||
-                (schedule.getEvenWeekSchedule().isEmpty() && schedule.getOddWeekSchedule().isEmpty());
+    private boolean isScheduleCompletelyEmpty(Schedule schedule) {
+        return isWeekScheduleEmpty(schedule.getEvenWeekSchedule()) &&
+                isWeekScheduleEmpty(schedule.getOddWeekSchedule());
+    }
+
+    private void validateWeekDays(Map<String, Map<String, LessonDto>> weekSchedule, String weekType) throws EmptyScheduleException {
+        if (isWeekScheduleEmpty(weekSchedule)) {
+            log.warn("Schedule for {} week is empty", weekType);
+        }
+    }
+
+    private boolean isWeekScheduleEmpty(Map<String, Map<String, LessonDto>> weekSchedule) {
+        return weekSchedule == null || weekSchedule.isEmpty() ||
+                weekSchedule.values().stream()
+                        .allMatch(day -> day == null || day.isEmpty());
     }
 
     private void logAndThrowEmptyScheduleException() throws EmptyScheduleException {
-        log.error("Empty schedule");
-        throw new EmptyScheduleException("Empty schedule");
-    }
-
-    private Set<DayOfWeek> findEmptyDays(Map<DayOfWeek, ScheduleDay> weekSchedule) {
-        return weekSchedule.entrySet().stream()
-                .filter(entry -> isScheduleDayEmpty(entry.getValue()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
-
-    private boolean isScheduleDayEmpty(ScheduleDay scheduleDay) {
-        return scheduleDay == null ||
-                scheduleDay.getLessons() == null ||
-                scheduleDay.getLessons().values().stream().allMatch(List::isEmpty);
-    }
-
-    private boolean isCompletelyEmpty(Set<DayOfWeek> emptyDays, Set<DayOfWeek> weekDays) {
-        return emptyDays.containsAll(weekDays);
+        log.error("Schedule is completely empty");
+        throw new EmptyScheduleException("Schedule is completely empty");
     }
 }
