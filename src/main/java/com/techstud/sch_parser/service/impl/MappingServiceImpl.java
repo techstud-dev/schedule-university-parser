@@ -926,7 +926,10 @@ public class MappingServiceImpl implements MappingService {
                     List<ScheduleObject> scheduleObjects = lessons.get(timeSheet);
                     ScheduleObject addedScheduleObject = mapSseuLessonToScheduleObject(sseuSchedule.getBody().get(finalI).getDaySchedule().get(day));
                     assert addedScheduleObject != null;
-                    if (addedScheduleObject.getName() != null && addedScheduleObject.getType() != null && addedScheduleObject.getPlace() != null) {
+                    if (addedScheduleObject.getName() != null && addedScheduleObject.getType() != null) {
+                        if(addedScheduleObject.getPlace() == null){
+                            addedScheduleObject.setPlace("No audience specified");
+                        }
                         scheduleObjects.add(addedScheduleObject);
                     }
                 }
