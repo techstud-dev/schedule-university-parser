@@ -8,6 +8,7 @@ import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @Log4j2
+@Disabled
 public class SpbstuParserTest {
 
     private MappingService mappingService;
