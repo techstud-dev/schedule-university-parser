@@ -812,7 +812,9 @@ public class MappingServiceImpl implements MappingService {
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
         for (DayOfWeek day : DayOfWeek.values()) {
-            scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement));
+            if (day != DayOfWeek.SUNDAY) {
+                scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement));
+            }
         }
         return scheduleDayMap;
     }
