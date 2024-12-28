@@ -176,16 +176,27 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    @Override
     public Schedule mapUneconToSchedule(List<Document> documents) {
         log.info("Start mapping UNECON data to schedule");
         Schedule schedule = new Schedule();
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
 
-        for (Document document : documents) {
+        boolean isEvenWeekEmpty = isDocumentEmpty(documents.get(0));
+        boolean isOddWeekEmpty = isDocumentEmpty(documents.get(1));
+
+        log.info("Is even week empty: {}, Is odd week empty: {}", isEvenWeekEmpty, isOddWeekEmpty);
+
+        for (int i = 0; i < documents.size(); i++) {
+            Document document = documents.get(i);
             if (document == null) {
                 log.warn("Document is empty");
+                continue;
+            }
+
+            boolean isCurrentWeekEmpty = (i == 0) ? isEvenWeekEmpty : isOddWeekEmpty;
+            if (isCurrentWeekEmpty) {
+                log.warn("Skipping week {} because it's empty", (i == 0) ? "even" : "odd");
                 continue;
             }
 
@@ -193,8 +204,7 @@ public class MappingServiceImpl implements MappingService {
             log.info("Found elements: {}", elements.size());
 
             DayOfWeek currentDayOfWeek;
-            ScheduleDay evenWeekDay = null;
-            ScheduleDay oddWeekDay = null;
+            ScheduleDay currentWeekDay = null;
 
             for (Element row : elements) {
                 if (row.hasClass("new_day_border")) {
@@ -204,16 +214,19 @@ public class MappingServiceImpl implements MappingService {
 
                         try {
                             currentDayOfWeek = uneconParseDayOfWeek(dayText);
-                            evenWeekDay = new ScheduleDay();
-                            oddWeekDay = new ScheduleDay();
-                            evenWeekSchedule.put(currentDayOfWeek, evenWeekDay);
-                            oddWeekSchedule.put(currentDayOfWeek, oddWeekDay);
+                            currentWeekDay = new ScheduleDay();
+
+                            if (i == 0) {
+                                evenWeekSchedule.put(currentDayOfWeek, currentWeekDay);
+                            } else {
+                                oddWeekSchedule.put(currentDayOfWeek, currentWeekDay);
+                            }
                         } catch (IllegalArgumentException e) {
                             log.error("Error while parsing day of week: {}", dayText, e);
                         }
                     }
-                } else if (evenWeekDay != null && oddWeekDay != null) {
-                    getUneconScheduleDay(row, evenWeekDay, oddWeekDay);
+                } else if (currentWeekDay != null) {
+                    getUneconScheduleDay(row, currentWeekDay);
                 }
             }
         }
@@ -222,6 +235,14 @@ public class MappingServiceImpl implements MappingService {
         schedule.setOddWeekSchedule(oddWeekSchedule);
         log.info("Mapping UNECON data to schedule {} finished", schedule);
         return schedule;
+    }
+
+    private boolean isDocumentEmpty(Document document) {
+        if (document == null) {
+            return true;
+        }
+        Elements rows = document.select("table tbody tr");
+        return rows.isEmpty();
     }
 
     @Override
@@ -413,18 +434,15 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObjects;
     }
 
-    private void getUneconScheduleDay(Element element, ScheduleDay evenWeekDay, ScheduleDay oddWeekDay) {
+    private void getUneconScheduleDay(Element element, ScheduleDay scheduleDay) {
         TimeSheet timeSheet = parseUneconTimeSheet(element);
         if (timeSheet == null) {
             log.warn("Cant process timesheet in the element: {}", element);
             return;
         }
 
-        Map<TimeSheet, List<ScheduleObject>> evenLessons = evenWeekDay.getLessons();
-        Map<TimeSheet, List<ScheduleObject>> oddLessons = oddWeekDay.getLessons();
-
-        evenLessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseUneconScheduleObject(element));
-        oddLessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseUneconScheduleObject(element));
+        Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
+        lessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseUneconScheduleObject(element));
     }
 
     private TimeSheet parseUneconTimeSheet(Element element) {
@@ -467,7 +485,6 @@ public class MappingServiceImpl implements MappingService {
         String teacher = element.select(".predmet .prepod a").text();
         String place = element.select(".predmet .aud").text();
         place = place.replace("ПОКАЗАТЬ НА СХЕМЕ ", "").trim();
-
 
         ScheduleObject scheduleObject = new ScheduleObject();
 
