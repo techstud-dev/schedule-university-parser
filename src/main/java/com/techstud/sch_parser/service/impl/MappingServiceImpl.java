@@ -176,16 +176,27 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    @Override
     public Schedule mapUneconToSchedule(List<Document> documents) {
         log.info("Start mapping UNECON data to schedule");
         Schedule schedule = new Schedule();
         Map<DayOfWeek, ScheduleDay> evenWeekSchedule = new LinkedHashMap<>();
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
 
-        for (Document document : documents) {
+        boolean isEvenWeekEmpty = isDocumentEmpty(documents.get(0));
+        boolean isOddWeekEmpty = isDocumentEmpty(documents.get(1));
+
+        log.info("Is even week empty: {}, Is odd week empty: {}", isEvenWeekEmpty, isOddWeekEmpty);
+
+        for (int i = 0; i < documents.size(); i++) {
+            Document document = documents.get(i);
             if (document == null) {
                 log.warn("Document is empty");
+                continue;
+            }
+
+            boolean isCurrentWeekEmpty = (i == 0) ? isEvenWeekEmpty : isOddWeekEmpty;
+            if (isCurrentWeekEmpty) {
+                log.warn("Skipping week {} because it's empty", (i == 0) ? "even" : "odd");
                 continue;
             }
 
@@ -193,8 +204,7 @@ public class MappingServiceImpl implements MappingService {
             log.info("Found elements: {}", elements.size());
 
             DayOfWeek currentDayOfWeek;
-            ScheduleDay evenWeekDay = null;
-            ScheduleDay oddWeekDay = null;
+            ScheduleDay currentWeekDay = null;
 
             for (Element row : elements) {
                 if (row.hasClass("new_day_border")) {
@@ -204,16 +214,19 @@ public class MappingServiceImpl implements MappingService {
 
                         try {
                             currentDayOfWeek = uneconParseDayOfWeek(dayText);
-                            evenWeekDay = new ScheduleDay();
-                            oddWeekDay = new ScheduleDay();
-                            evenWeekSchedule.put(currentDayOfWeek, evenWeekDay);
-                            oddWeekSchedule.put(currentDayOfWeek, oddWeekDay);
+                            currentWeekDay = new ScheduleDay();
+
+                            if (i == 0) {
+                                evenWeekSchedule.put(currentDayOfWeek, currentWeekDay);
+                            } else {
+                                oddWeekSchedule.put(currentDayOfWeek, currentWeekDay);
+                            }
                         } catch (IllegalArgumentException e) {
                             log.error("Error while parsing day of week: {}", dayText, e);
                         }
                     }
-                } else if (evenWeekDay != null && oddWeekDay != null) {
-                    getUneconScheduleDay(row, evenWeekDay, oddWeekDay);
+                } else if (currentWeekDay != null) {
+                    getUneconScheduleDay(row, currentWeekDay);
                 }
             }
         }
@@ -222,6 +235,14 @@ public class MappingServiceImpl implements MappingService {
         schedule.setOddWeekSchedule(oddWeekSchedule);
         log.info("Mapping UNECON data to schedule {} finished", schedule);
         return schedule;
+    }
+
+    private boolean isDocumentEmpty(Document document) {
+        if (document == null) {
+            return true;
+        }
+        Elements rows = document.select("table tbody tr");
+        return rows.isEmpty();
     }
 
     @Override
@@ -324,11 +345,14 @@ public class MappingServiceImpl implements MappingService {
                 continue;
             }
 
-            ScheduleObject scheduleObject = getMiitScheduleObject(lessonCell);
-            weekSchedule.get(dayOfWeek)
-                    .getLessons()
-                    .get(timeSheet)
-                    .add(scheduleObject);
+            List<ScheduleObject> scheduleObjects = getMiitScheduleObjects(lessonCell);
+
+            scheduleObjects.forEach(scheduleObject ->
+                    weekSchedule.get(dayOfWeek)
+                            .getLessons()
+                            .get(timeSheet)
+                            .add(scheduleObject)
+            );
         }
     }
 
@@ -352,24 +376,35 @@ public class MappingServiceImpl implements MappingService {
                 : null;
     }
 
-    private ScheduleObject getMiitScheduleObject(Element lessonElement) {
-        ScheduleObject scheduleObject = new ScheduleObject();
+    private List<ScheduleObject> getMiitScheduleObjects(Element lessonElement) {
+        List<ScheduleObject> scheduleObjects = new ArrayList<>();
 
-        Optional.ofNullable(lessonElement.selectFirst("div.timetable__grid-day-lesson"))
-                .ifPresent(el -> scheduleObject.setName(el.ownText()));
+        Elements lessonParts = lessonElement.select("div.timetable__grid-day-lesson");
+        for (Element lessonPart : lessonParts) {
+            ScheduleObject scheduleObject = new ScheduleObject();
 
-        String typeText = lessonElement.select(".timetable__grid-text_gray").text().trim();
-        scheduleObject.setType(mapMiitLessonTypeToScheduleType(typeText));
+            Optional.ofNullable(lessonPart.selectFirst("span.timetable__grid-text_gray"))
+                    .ifPresent(el -> scheduleObject.setType(mapMiitLessonTypeToScheduleType(el.text().trim())));
 
-        Optional.ofNullable(lessonElement.selectFirst("a.icon-academic-cap"))
-                .ifPresent(el -> scheduleObject.setTeacher(el.ownText()));
+            String lessonName = lessonPart.ownText().trim();
+            scheduleObject.setName(lessonName);
 
-        scheduleObject.setGroups(lessonElement.select("span.icon-community, a.icon-community")
-                .eachText());
+            assert lessonPart.parent() != null;
+            Optional.ofNullable(lessonPart.parent().selectFirst("a.icon-academic-cap"))
+                    .ifPresent(el -> scheduleObject.setTeacher(el.attr("title").trim()));
 
-        scheduleObject.setPlace(String.join(", ", lessonElement.select("a.icon-location").eachText()));
+            String place = String.join(", ", lessonPart.parent().select("a.icon-location").eachText());
+            scheduleObject.setPlace(place);
 
-        return scheduleObject;
+            List<String> groups = lessonPart.parent()
+                    .select("span.icon-community, a.icon-community")
+                    .eachText();
+            scheduleObject.setGroups(groups);
+
+            scheduleObjects.add(scheduleObject);
+        }
+
+        return scheduleObjects;
     }
 
     private Map<DayOfWeek, ScheduleDay> parsePgupsSchedule(Document document) {
@@ -413,18 +448,15 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObjects;
     }
 
-    private void getUneconScheduleDay(Element element, ScheduleDay evenWeekDay, ScheduleDay oddWeekDay) {
+    private void getUneconScheduleDay(Element element, ScheduleDay scheduleDay) {
         TimeSheet timeSheet = parseUneconTimeSheet(element);
         if (timeSheet == null) {
             log.warn("Cant process timesheet in the element: {}", element);
             return;
         }
 
-        Map<TimeSheet, List<ScheduleObject>> evenLessons = evenWeekDay.getLessons();
-        Map<TimeSheet, List<ScheduleObject>> oddLessons = oddWeekDay.getLessons();
-
-        evenLessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseUneconScheduleObject(element));
-        oddLessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseUneconScheduleObject(element));
+        Map<TimeSheet, List<ScheduleObject>> lessons = scheduleDay.getLessons();
+        lessons.computeIfAbsent(timeSheet, k -> new ArrayList<>()).addAll(parseUneconScheduleObject(element));
     }
 
     private TimeSheet parseUneconTimeSheet(Element element) {
@@ -467,7 +499,6 @@ public class MappingServiceImpl implements MappingService {
         String teacher = element.select(".predmet .prepod a").text();
         String place = element.select(".predmet .aud").text();
         place = place.replace("ПОКАЗАТЬ НА СХЕМЕ ", "").trim();
-
 
         ScheduleObject scheduleObject = new ScheduleObject();
 
@@ -812,7 +843,9 @@ public class MappingServiceImpl implements MappingService {
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
         for (DayOfWeek day : DayOfWeek.values()) {
-            scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement));
+            if (day != DayOfWeek.SUNDAY) {
+                scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement));
+            }
         }
         return scheduleDayMap;
     }
@@ -1061,35 +1094,35 @@ public class MappingServiceImpl implements MappingService {
     private List<ScheduleDay> returnObjectParsingListFromResponseSpbstu(JsonNode responseFromHTML){
         List<ScheduleDay> objectParsing = new LinkedList<>();
         responseFromHTML.fields().forEachRemaining(field ->
-            field.getValue().forEach(day -> {
-                ScheduleDay scheduleDay = new ScheduleDay();
-                Map<TimeSheet, List<ScheduleObject>> mappedStruct = new LinkedHashMap<>();
-                String dateForObject = day.path("date").asText();
-                JsonNode lessonArray = day.path("lessons");
-                lessonArray.forEach(lesson -> {
-                    TimeSheet localTimeSheet = new TimeSheet(lesson.path("time_start").asText(), lesson.path("time_end").asText());
-                    ScheduleObject scheduleObject = new ScheduleObject();
-                    scheduleObject.setType(returnScheduleTypeSpbstu(
-                            lesson.path("typeObj").path("name").asText()
-                    ));
-                    scheduleObject.setName(lesson.path("subject").asText());
-                    lesson.path("teachers").forEach(teacher -> scheduleObject.setTeacher(teacher.path("full_name").asText()));
-                    lesson.path("auditories").forEach(auditor -> scheduleObject.setPlace(auditor.path("name").asText()));
-                    List<String> groups = new ArrayList<>();
-                    lesson.path("groups").forEach(group -> groups.add(group.path("name").asText()));
-                    scheduleObject.setGroups(groups);
-                    mappedStruct.computeIfAbsent(localTimeSheet, k -> new ArrayList<>()).add(scheduleObject);
-                });
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                try {
-                    Date date = formatter.parse(dateForObject);
-                    scheduleDay.setDate(date);
-                } catch (ParseException e) {
-                    log.error(e.getMessage());
-                }
-                scheduleDay.setLessons(mappedStruct);
-                objectParsing.add(scheduleDay);
-            })
+                field.getValue().forEach(day -> {
+                    ScheduleDay scheduleDay = new ScheduleDay();
+                    Map<TimeSheet, List<ScheduleObject>> mappedStruct = new LinkedHashMap<>();
+                    String dateForObject = day.path("date").asText();
+                    JsonNode lessonArray = day.path("lessons");
+                    lessonArray.forEach(lesson -> {
+                        TimeSheet localTimeSheet = new TimeSheet(lesson.path("time_start").asText(), lesson.path("time_end").asText());
+                        ScheduleObject scheduleObject = new ScheduleObject();
+                        scheduleObject.setType(returnScheduleTypeSpbstu(
+                                lesson.path("typeObj").path("name").asText()
+                        ));
+                        scheduleObject.setName(lesson.path("subject").asText());
+                        lesson.path("teachers").forEach(teacher -> scheduleObject.setTeacher(teacher.path("full_name").asText()));
+                        lesson.path("auditories").forEach(auditor -> scheduleObject.setPlace(auditor.path("name").asText()));
+                        List<String> groups = new ArrayList<>();
+                        lesson.path("groups").forEach(group -> groups.add(group.path("name").asText()));
+                        scheduleObject.setGroups(groups);
+                        mappedStruct.computeIfAbsent(localTimeSheet, k -> new ArrayList<>()).add(scheduleObject);
+                    });
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                    try {
+                        Date date = formatter.parse(dateForObject);
+                        scheduleDay.setDate(date);
+                    } catch (ParseException e) {
+                        log.error(e.getMessage());
+                    }
+                    scheduleDay.setLessons(mappedStruct);
+                    objectParsing.add(scheduleDay);
+                })
         );
         return objectParsing;
     }
