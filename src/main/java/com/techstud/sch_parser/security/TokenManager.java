@@ -17,11 +17,9 @@ public class TokenManager {
     public void updateTokens(String newAccessToken, String newRefreshToken) {
         accessToken.set(newAccessToken);
         refreshToken.set(newRefreshToken);
-        log.info("Tokens updated. Access token: {}..., Refresh token: {}...",
-                mask(newAccessToken), mask(newRefreshToken));
     }
 
-    private String mask(String token) {
-        return token == null ? "null" : token.substring(0, 5) + "*******";
+    public void updateAccessToken(String newAccessToken) {
+        accessToken.set(newAccessToken);
     }
 }

@@ -30,7 +30,7 @@ public class TokenServiceImpl implements com.techstud.sch_parser.security.TokenS
     public String generateServiceToken() {
         return JWT.create()
                 .withIssuer("sch-parser")
-                .withClaim("role", "SERVICE")
+                .withClaim("type", "jwt")
                 .withIssuedAt(Date.from(Instant.now()))
                 .withExpiresAt(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .sign(algorithm);

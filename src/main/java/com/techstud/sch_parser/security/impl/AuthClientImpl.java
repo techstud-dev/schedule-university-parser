@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +52,7 @@ public class AuthClientImpl implements AuthClient {
             return;
         }
 
-        HttpPost httpPost = new HttpPost(authServiceUrl + "/auth/refresh-token");
+        HttpPost httpPost = new HttpPost(authServiceUrl + "/service/auth/refresh-token");
         httpPost.setHeader("Authorization", "Bearer " + currentRefreshToken);
 
         executeWithRetry(() -> {
@@ -84,13 +82,9 @@ public class AuthClientImpl implements AuthClient {
         int statusCode = response.getStatusLine().getStatusCode();
 
         if (statusCode == 200) {
-            String responseBody = EntityUtils.toString(response.getEntity());
-            JSONObject json = new JSONObject(responseBody);
-
-            String newAccessToken = json.getString("accessToken");
-            String newRefreshToken = json.getString("refreshToken");
-            tokenManager.updateTokens(newAccessToken, newRefreshToken);
-            log.info("Tokens refreshed successfully.");
+            String accessToken = response.getFirstHeader("Access-Token").getValue();
+            tokenManager.updateAccessToken(accessToken);
+            log.info("Access token refreshed successfully.");
         } else {
             throw new RuntimeException("Token refresh failed with status code: " + statusCode);
         }
