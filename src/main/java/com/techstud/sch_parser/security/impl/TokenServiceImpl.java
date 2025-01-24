@@ -16,6 +16,9 @@ public class TokenServiceImpl implements com.techstud.sch_parser.security.TokenS
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
 
+    @Value("${jwt.issuer}")
+    private String issuer;
+
     private Algorithm algorithm;
 
     @PostConstruct
@@ -29,10 +32,10 @@ public class TokenServiceImpl implements com.techstud.sch_parser.security.TokenS
     @Override
     public String generateServiceToken() {
         return JWT.create()
-                .withIssuer("sch-parser")
+                .withIssuer(issuer)
                 .withClaim("type", "jwt")
                 .withIssuedAt(Date.from(Instant.now()))
-                .withExpiresAt(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .withExpiresAt(Date.from(Instant.now().plus(2, ChronoUnit.MINUTES)))
                 .sign(algorithm);
     }
 }
