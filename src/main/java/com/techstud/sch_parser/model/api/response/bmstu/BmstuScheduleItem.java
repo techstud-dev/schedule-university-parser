@@ -20,5 +20,9 @@ public class BmstuScheduleItem implements Serializable {
     private String startTime;
     private BmstuDiscipline discipline;
     private String permission;
+    private Integer endTimeMinNum;
+    private Integer endTimeHourNum;
+    private Integer startTimeMinNum;
+    private Integer startTimeHourNum;
 
 }
