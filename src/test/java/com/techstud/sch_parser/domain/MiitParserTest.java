@@ -2,20 +2,23 @@ package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.MiitParser;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import com.techstud.sch_parser.service.impl.MappingServiceImpl;
+import com.techstud.sch_parser.service.MappingServiceRef;
+import com.techstud.sch_parser.service.impl.MiitServiceImpl;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 @Disabled
 public class MiitParserTest {
 
-    private MappingService mappingService;
+    private MappingServiceRef<List<Document>> mappingService;
 
     @BeforeEach
     public void setUp() {
-        mappingService = new MappingServiceImpl();
+        mappingService = new MiitServiceImpl();
     }
 
     @Test
