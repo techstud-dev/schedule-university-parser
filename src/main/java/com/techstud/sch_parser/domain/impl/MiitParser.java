@@ -5,9 +5,6 @@ import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingServiceRef;
-import com.techstud.sch_parser.service.impl.MiitServiceImpl;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,20 +13,21 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Component("MIIT")
-@RequiredArgsConstructor
 public class MiitParser implements Parser {
 
-    @Qualifier("miitServiceImpl")
     private final MappingServiceRef<List<Document>> mappingService;
 
+    public MiitParser(@Qualifier("miitServiceImpl") MappingServiceRef<List<Document>> mappingService) {
+        this.mappingService = mappingService;
+    }
+
     @Override
-    public Schedule parseSchedule(ParsingTask task) throws IOException, EmptyScheduleException {
+    public Schedule parseSchedule(ParsingTask task) throws Exception {
         log.info("Parsing schedule started for group: {}", task.getGroupId());
 
         String url = String.format("https://www.miit.ru/timetable/%s", task.getGroupId());

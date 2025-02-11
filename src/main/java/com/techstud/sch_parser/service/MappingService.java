@@ -18,8 +18,6 @@ public interface MappingService {
 
     Schedule mapNsuToSchedule(Document document);
 
-    Schedule mapUneconToSchedule(List<Document> documents);
-
     Schedule mapTltsuToSchedule(List<TltsuApiResponse> documents) throws EmptyScheduleException;
 
     Schedule mapPgupsToSchedule(List<Document> documents);

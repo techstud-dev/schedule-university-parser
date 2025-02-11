@@ -4,7 +4,6 @@ import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingServiceRef;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -17,13 +16,15 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-@Component("MEPHI")
 @Slf4j
-@RequiredArgsConstructor
+@Component("MEPHI")
 public class MephiParser implements Parser {
 
-    @Qualifier("mephiServiceImpl")
     private final MappingServiceRef<List<Document>> mappingService;
+
+    public MephiParser(@Qualifier("mephiServiceImpl") MappingServiceRef<List<Document>> mappingService) {
+        this.mappingService = mappingService;
+    }
 
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
