@@ -6,11 +6,13 @@ import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingServiceRef;
 import com.techstud.sch_parser.service.impl.MiitServiceImpl;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MiitParser implements Parser {
 
+    @Qualifier("miitServiceImpl")
     private final MappingServiceRef<List<Document>> mappingService;
 
     @Override
