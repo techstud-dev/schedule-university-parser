@@ -16,8 +16,6 @@ public interface MappingService {
 
     Schedule mapBmstuToSchedule(BmstuApiResponse bmstuApiResponse);
 
-    Schedule mapNsuToSchedule(Document document);
-
     Schedule mapTltsuToSchedule(List<TltsuApiResponse> documents) throws EmptyScheduleException;
 
     Schedule mapPgupsToSchedule(List<Document> documents);
