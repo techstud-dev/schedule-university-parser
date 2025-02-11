@@ -3,11 +3,11 @@ package com.techstud.sch_parser.domain.impl;
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import lombok.RequiredArgsConstructor;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.text.MessageFormat;
@@ -16,12 +16,15 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-@Component("MEPHI")
 @Slf4j
-@RequiredArgsConstructor
+@Component("MEPHI")
 public class MephiParser implements Parser {
 
-    private final MappingService mappingService;
+    private final MappingServiceRef<List<Document>> mappingService;
+
+    public MephiParser(@Qualifier("mephiServiceImpl") MappingServiceRef<List<Document>> mappingService) {
+        this.mappingService = mappingService;
+    }
 
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
@@ -40,7 +43,7 @@ public class MephiParser implements Parser {
         Document oddDoc = Jsoup.connect(oddUrl).get();
 
         log.info("Successfully fetching data from MEPHI API");
-        return mappingService.mapMephiToSchedule(List.of(evenDoc, oddDoc));
+        return mappingService.map(List.of(evenDoc, oddDoc));
     }
 
     private String[] getCurrentWeekNumbers(TimeZone timeZone) {

@@ -3,11 +3,11 @@ package com.techstud.sch_parser.domain.impl;
 import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import lombok.RequiredArgsConstructor;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.text.MessageFormat;
@@ -16,12 +16,15 @@ import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-@Component("UNECON")
 @Slf4j
-@RequiredArgsConstructor
+@Component("UNECON")
 public class UneconParser implements Parser {
 
-    private final MappingService mappingService;
+    private final MappingServiceRef<List<Document>> mappingService;
+
+    public UneconParser(@Qualifier("uneconServiceImpl") MappingServiceRef<List<Document>> mappingService) {
+        this.mappingService = mappingService;
+    }
 
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
@@ -38,7 +41,7 @@ public class UneconParser implements Parser {
         Document nextWeekDoc = Jsoup.connect(nextWeekUrl).get();
 
         log.info("Successfully fetching data from UNECON API");
-        return mappingService.mapUneconToSchedule(List.of(currentWeekDoc, nextWeekDoc));
+        return mappingService.map(List.of(currentWeekDoc, nextWeekDoc));
     }
 
     private String[] getCurrentWeekNumbers() {
