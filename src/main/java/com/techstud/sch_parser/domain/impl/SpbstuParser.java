@@ -10,6 +10,7 @@ import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -27,16 +29,25 @@ import java.util.List;
 
 
 @Component("SPBSTU")
-@RequiredArgsConstructor
 @Slf4j
 public class SpbstuParser implements Parser {
 
-    private final MappingService mappingService;
+    private MappingServiceRef<List<Document>> serviceRef;
 
     /**
-     * @param task таска на парсинг расписания
-     * @return возвращает объект расписания
-     * @throws Exception исключения в случае если парсинг вернет какие-либо ошибки
+     * @param serviceRef mapping service implemented through Spring.
+     *                   Annotation {@link Qualifier} indicates the specific implementation of the service for working with data SPbSTU
+     */
+    public SpbstuParser(
+            @Qualifier("spbstuServiceImpl") MappingServiceRef<List<Document>> serviceRef
+    ){
+        this.serviceRef = serviceRef;
+    }
+
+    /**
+     * @param task {@link ParsingTask} task for parsing schedule
+     * @return returns the {@link Schedule}
+     * @throws Exception exceptions if parsing returns any errors
      */
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
@@ -45,7 +56,7 @@ public class SpbstuParser implements Parser {
         log.info("Connecting to SPBSTU timetable page: {}", scheduleUrl);
 
         log.info("Successfully parsing data from NSU API");
-        return mappingService.mapSpbstuScheduleByScheduleDay(returnListWeek(scheduleUrl));
+        return serviceRef.map(returnListWeek(scheduleUrl));
     }
 
     /**
@@ -92,18 +103,34 @@ public class SpbstuParser implements Parser {
         return docs;
     }
 
+    /**
+     * the invested class presenting a week in the schedule
+     * contains information about the start date, end date and type of week (even/odd)
+     */
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     static class Week{
+        /**
+         * the start date of the week in format "yyyy.MM.dd"
+         * annotation is used {@link JsonFormat} for the correct parsing and serialization of the date
+         */
         @JsonFormat(pattern = "yyyy.MM.dd")
         @JsonProperty("date_start")
         private LocalDate dateStart;
 
+        /**
+         * the end date of the week in format "yyyy.MM.dd"
+         * annotation is used{@link JsonFormat} for the correct parsing and serialization of the date.
+         */
         @JsonFormat(pattern = "yyyy.MM.dd")
         @JsonProperty("date_end")
         private LocalDate dateEnd;
 
+        /**
+         * the flag indicating whether the week is odd
+         * if true is an odd week if false is even
+         */
         @JsonProperty("is_odd")
         private boolean idOdd;
     }
