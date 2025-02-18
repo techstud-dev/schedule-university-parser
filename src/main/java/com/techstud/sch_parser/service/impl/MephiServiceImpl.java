@@ -12,6 +12,9 @@ import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,17 +53,21 @@ public class MephiServiceImpl implements MappingServiceRef<List<Document>> {
         var elements = document.select(".lesson-wday, .list-group");
 
         var currentDayOfWeek = new Object() { DayOfWeek value = null; };
+
+        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
         elements.forEach(element -> {
             if (element.hasClass("lesson-wday")) {
                 currentDayOfWeek.value = parseDayOfWeek(element.text());
             } else if (element.hasClass("list-group") && currentDayOfWeek.value != null) {
-                weekSchedule.put(currentDayOfWeek.value, getMephiScheduleDay(element));
+                LocalDate date = startOfWeek.with(currentDayOfWeek.value);
+                weekSchedule.put(currentDayOfWeek.value, getMephiScheduleDay(element, date));
             }
         });
         return weekSchedule;
     }
 
-    private ScheduleDay getMephiScheduleDay(Element element) {
+    private ScheduleDay getMephiScheduleDay(Element element, LocalDate date) {
         var scheduleDayMap = element.select("div.list-group-item.d-xs-flex").stream()
                 .collect(Collectors.toMap(
                         groupElement -> parseMephiTimeSheet(Objects.requireNonNull(groupElement.selectFirst(".lesson-time")).text()),
@@ -70,6 +77,7 @@ public class MephiServiceImpl implements MappingServiceRef<List<Document>> {
                 ));
 
         ScheduleDay scheduleDay = new ScheduleDay();
+        scheduleDay.setLocalDate(date);
         scheduleDay.setLessons(scheduleDayMap);
         return scheduleDay;
     }

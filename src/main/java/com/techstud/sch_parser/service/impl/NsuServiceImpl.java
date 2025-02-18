@@ -13,8 +13,10 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,9 +38,13 @@ public class NsuServiceImpl implements MappingServiceRef<Document> {
         Map<DayOfWeek, ScheduleDay> oddWeekSchedule = new LinkedHashMap<>();
         DayOfWeek[] daysOfWeek = DayOfWeek.values();
 
+        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
         for (DayOfWeek day : daysOfWeek) {
-            evenWeekSchedule.put(day, new ScheduleDay());
-            oddWeekSchedule.put(day, new ScheduleDay());
+            evenWeekSchedule.put(day, new ScheduleDay(startOfWeek
+                    .plusDays(day.getValue() - 1)));
+            oddWeekSchedule.put(day, new ScheduleDay(startOfWeek
+                    .plusDays(day.getValue() - 1).plusWeeks(1)));
         }
 
         Elements rows = source.select("table.time-table tbody tr");

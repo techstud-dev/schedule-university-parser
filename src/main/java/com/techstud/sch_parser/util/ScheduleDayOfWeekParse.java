@@ -17,21 +17,21 @@ public class ScheduleDayOfWeekParse implements Serializable {
         };
     }
 
-    public static DayOfWeek uneconParseDayOfWeek(String dayName) {
-        if (dayName.contains(" ")) {
-            dayName = dayName.substring(dayName.lastIndexOf(" ") + 1);
-        }
+        public static DayOfWeek uneconParseDayOfWeek(String dayName) {
+            if (dayName.contains(" ")) {
+                dayName = dayName.substring(dayName.lastIndexOf(" ") + 1);
+            }
 
-        return switch (dayName.toUpperCase()) {
-            case "ПН" -> DayOfWeek.MONDAY;
-            case "ВТ" -> DayOfWeek.TUESDAY;
-            case "СР" -> DayOfWeek.WEDNESDAY;
-            case "ЧТ" -> DayOfWeek.THURSDAY;
-            case "ПТ" -> DayOfWeek.FRIDAY;
-            case "СБ" -> DayOfWeek.SATURDAY;
-            default -> throw new IllegalArgumentException("Неизвестный день недели: " + dayName);
-        };
-    }
+            return switch (dayName.toUpperCase()) {
+                case "ПН" -> DayOfWeek.MONDAY;
+                case "ВТ" -> DayOfWeek.TUESDAY;
+                case "СР" -> DayOfWeek.WEDNESDAY;
+                case "ЧТ" -> DayOfWeek.THURSDAY;
+                case "ПТ" -> DayOfWeek.FRIDAY;
+                case "СБ" -> DayOfWeek.SATURDAY;
+                default -> throw new IllegalArgumentException("Неизвестный день недели: " + dayName);
+            };
+        }
 
     public static DayOfWeek miitParseDayOfWeeK(String dayName) {
         return switch(dayName) {
