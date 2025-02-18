@@ -130,26 +130,30 @@ public class MappingServiceImpl implements MappingService {
 
         Schedule schedule = new Schedule();
         schedule.setSnapshotDate(new Date());
-        schedule.setEvenWeekSchedule(parsePgupsSchedule(documents.get(0)));
-        schedule.setOddWeekSchedule(parsePgupsSchedule(documents.get(1)));
+        schedule.setEvenWeekSchedule(parsePgupsSchedule(documents.get(0), true));
+        schedule.setOddWeekSchedule(parsePgupsSchedule(documents.get(1), false));
 
         log.info("Mapping PGUPS data to schedule {} finished", schedule);
         return schedule;
     }
 
-    private Map<DayOfWeek, ScheduleDay> parsePgupsSchedule(Document document) {
+    private Map<DayOfWeek, ScheduleDay> parsePgupsSchedule(Document document, boolean isEvenWeek) {
         Map<DayOfWeek, ScheduleDay> schedule = new LinkedHashMap<>();
         Elements scheduleDays = document.getElementsByTag("tbody");
 
+        LocalDate baseWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        final LocalDate weekStart = isEvenWeek ? baseWeekStart : baseWeekStart.plusWeeks(1);
+
         scheduleDays.forEach(day -> {
             DayOfWeek dayOfWeek = parseDayOfWeek(day.getElementsByClass("kt-font-dark").text().toLowerCase());
-            schedule.put(dayOfWeek, parsePgupsScheduleDay(day));
+            LocalDate date = weekStart.with(dayOfWeek);
+            schedule.put(dayOfWeek, parsePgupsScheduleDay(day, date));
         });
 
         return schedule;
     }
 
-    private ScheduleDay parsePgupsScheduleDay(Element dayElement) {
+    private ScheduleDay parsePgupsScheduleDay(Element dayElement, LocalDate date) {
         Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
 
         dayElement.getElementsByTag("tr").forEach(lesson -> {
@@ -161,6 +165,7 @@ public class MappingServiceImpl implements MappingService {
         });
 
         ScheduleDay scheduleDay = new ScheduleDay();
+        scheduleDay.setLocalDate(date);
         scheduleDay.setLessons(lessons);
         return scheduleDay;
     }

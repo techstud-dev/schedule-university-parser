@@ -23,7 +23,7 @@ public class PgupsParseTest {
     @Test
     public void pgupsCheck1() throws Exception {
         ParsingTask task = new ParsingTask();
-        task.setGroupId("1803720390255793791");
+        task.setGroupId("1804106313720092287");
         task.setUniversityName("PGUPS");
         Parser underTest = new PgupsParser(mappingService);
         System.out.println(underTest.parseSchedule(task));
