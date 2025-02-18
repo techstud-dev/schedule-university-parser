@@ -36,8 +36,8 @@ public class MephiServiceImpl implements MappingServiceRef<List<Document>> {
         var evenWeekDocument = source.get(0);
         var oddWeekDocument = source.get(1);
 
-        var evenWeekSchedule = getMephiWeekSchedule(evenWeekDocument);
-        var oddWeekSchedule = getMephiWeekSchedule(oddWeekDocument);
+        var evenWeekSchedule = getMephiWeekSchedule(evenWeekDocument, true);
+        var oddWeekSchedule = getMephiWeekSchedule(oddWeekDocument, false);
 
         var schedule = new Schedule();
         schedule.setEvenWeekSchedule(evenWeekSchedule);
@@ -48,19 +48,20 @@ public class MephiServiceImpl implements MappingServiceRef<List<Document>> {
         return schedule;
     }
 
-    private Map<DayOfWeek, ScheduleDay> getMephiWeekSchedule(Document document) {
+    private Map<DayOfWeek, ScheduleDay> getMephiWeekSchedule(Document document, boolean isEvenWeek) {
         var weekSchedule = new LinkedHashMap<DayOfWeek, ScheduleDay>();
         var elements = document.select(".lesson-wday, .list-group");
 
         var currentDayOfWeek = new Object() { DayOfWeek value = null; };
 
-        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate baseWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        final LocalDate weekStart = isEvenWeek ? baseWeekStart : baseWeekStart.plusWeeks(1);
 
         elements.forEach(element -> {
             if (element.hasClass("lesson-wday")) {
                 currentDayOfWeek.value = parseDayOfWeek(element.text());
             } else if (element.hasClass("list-group") && currentDayOfWeek.value != null) {
-                LocalDate date = startOfWeek.with(currentDayOfWeek.value);
+                LocalDate date = weekStart.with(currentDayOfWeek.value);
                 weekSchedule.put(currentDayOfWeek.value, getMephiScheduleDay(element, date));
             }
         });
