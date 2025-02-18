@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -85,8 +86,8 @@ public class MappingServiceImpl implements MappingService {
             return null;
         }
 
-        Map<DayOfWeek, ScheduleDay> evenSchedule = getSsauSchedule(evenElement);
-        Map<DayOfWeek, ScheduleDay> oddSchedule = getSsauSchedule(oddElement);
+        Map<DayOfWeek, ScheduleDay> evenSchedule = getSsauSchedule(evenElement, true);
+        Map<DayOfWeek, ScheduleDay> oddSchedule = getSsauSchedule(oddElement, false);
         Schedule schedule = new Schedule();
         schedule.setEvenWeekSchedule(evenSchedule);
         schedule.setOddWeekSchedule(oddSchedule);
@@ -340,17 +341,22 @@ public class MappingServiceImpl implements MappingService {
         return scheduleTypeMap.getOrDefault(bmstuType, ScheduleType.UNKNOWN);
     }
 
-    private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
+    private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement, boolean isEvenWeek) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
+
+        LocalDate baseWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        final LocalDate startOfWeek = isEvenWeek ? baseWeekStart : baseWeekStart.plusWeeks(1);
+
         for (DayOfWeek day : DayOfWeek.values()) {
             if (day != DayOfWeek.SUNDAY) {
-                scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement));
+                LocalDate date = startOfWeek.with(day);
+                scheduleDayMap.put(day, getSsauScheduleDay(day, scheduleElement, date));
             }
         }
         return scheduleDayMap;
     }
 
-    private ScheduleDay getSsauScheduleDay(DayOfWeek dayOfWeek, Element element) {
+    private ScheduleDay getSsauScheduleDay(DayOfWeek dayOfWeek, Element element, LocalDate date) {
         Elements scheduleItemElements = element.getElementsByClass("schedule__item");
         List<Element> ssauTimeSheets = element.getElementsByClass("schedule__time");
         List<Element> ssauDayOfWeek = scheduleItemElements.subList(1, 7);
@@ -375,7 +381,7 @@ public class MappingServiceImpl implements MappingService {
 
             timeSheetListMap.put(timeSheet, scheduleObjects);
         }
-        scheduleDay.setDateAsString(ssauDayOfWeek.get(1).getElementsByClass("schedule__head-date").text());
+        scheduleDay.setLocalDate(date);
         scheduleDay.setLessons(timeSheetListMap);
 
         return scheduleDay;
