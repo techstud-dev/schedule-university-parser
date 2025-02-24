@@ -1,13 +1,16 @@
 package com.techstud.sch_parser.domain.impl;
 
 import com.techstud.sch_parser.domain.Parser;
+import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
 import com.techstud.sch_parser.service.MappingService;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,13 +22,16 @@ import java.util.TimeZone;
 
 @Component("SSAU")
 @Slf4j
-@RequiredArgsConstructor
 public class SsauParser implements Parser {
 
-    private final MappingService mappingService;
+    private final MappingServiceRef<List<Document>> mappingService;
+
+    public SsauParser(@Qualifier("ssauMappingServiceImpl") MappingServiceRef<List<Document>> mappingService) {
+        this.mappingService = mappingService;
+    }
 
     @Override
-    public Schedule parseSchedule(ParsingTask task) throws IOException {
+    public Schedule parseSchedule(ParsingTask task) throws IOException, EmptyScheduleException {
         String[] parseWeeks = getCurrentWeekNumbers(TimeZone.getTimeZone("Europe/Samara"));
         final String[] evenParameters = {String.valueOf(task.getGroupId()), parseWeeks[0]};
         final String[] oddParameters = {String.valueOf(task.getGroupId()), parseWeeks[1]};
@@ -39,7 +45,7 @@ public class SsauParser implements Parser {
 
         Document oddDoc = Jsoup.connect(oddUrl).userAgent(userAgent).referrer(referrer).get();
         log.info("Successfully fetching data from SSAU API");
-        return mappingService.mapSsauToSchedule(List.of(evenDoc, oddDoc));
+        return mappingService.map(List.of(evenDoc, oddDoc));
     }
 
     private String[] getCurrentWeekNumbers(TimeZone timeZone) {
