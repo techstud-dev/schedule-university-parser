@@ -13,6 +13,8 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.miitParseDayOfWeeK;
@@ -32,16 +34,17 @@ public class MiitServiceImpl implements MappingServiceRef<List<Document>> {
             return schedule;
         }
 
-        schedule.setEvenWeekSchedule(parseMiitWeekSchedule(source.get(0)));
-        schedule.setOddWeekSchedule(parseMiitWeekSchedule(source.get(1)));
+        schedule.setEvenWeekSchedule(parseMiitWeekSchedule(source.get(0), true));
+        schedule.setOddWeekSchedule(parseMiitWeekSchedule(source.get(1), false));
 
         log.info("Mapping MIIT data to schedule {} finished.", schedule);
         return schedule;
     }
 
-    private Map<DayOfWeek, ScheduleDay> parseMiitWeekSchedule(Document document) {
+    private Map<DayOfWeek, ScheduleDay> parseMiitWeekSchedule(Document document, boolean isEvenWeek) {
         Map<DayOfWeek, ScheduleDay> weekSchedule = new EnumMap<>(DayOfWeek.class);
-        Arrays.stream(DayOfWeek.values()).forEach(day -> weekSchedule.put(day, new ScheduleDay()));
+        LocalDate baseWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        final LocalDate weekStart = isEvenWeek ? baseWeekStart : baseWeekStart.plusWeeks(1);
 
         Elements rows = document.select("tr");
         if (rows.isEmpty()) {
@@ -52,11 +55,12 @@ public class MiitServiceImpl implements MappingServiceRef<List<Document>> {
         var dayOfWeekMapping = extractMiitDayOfWeekMapping(rows.get(0));
         var allTimeSheets = extractAllMiitTimeSheets(rows);
 
-        weekSchedule.forEach((day, scheduleDay) ->
-                allTimeSheets.forEach(timeSheet ->
-                        scheduleDay.getLessons().putIfAbsent(timeSheet, new ArrayList<>())
-                )
-        );
+        dayOfWeekMapping.forEach((index, day) -> {
+            ScheduleDay scheduleDay = new ScheduleDay();
+            scheduleDay.setLocalDate(weekStart.with(day));
+            allTimeSheets.forEach(timeSheet -> scheduleDay.getLessons().putIfAbsent(timeSheet, new ArrayList<>()));
+            weekSchedule.put(day, scheduleDay);
+        });
 
         rows.stream().skip(1).forEach(row ->
                 processMiitLessonRow(row, weekSchedule, dayOfWeekMapping)

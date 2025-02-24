@@ -10,9 +10,11 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +40,8 @@ public class UneconServiceImpl implements MappingServiceRef<List<Document>> {
 
         log.info("Is even week empty: {}, Is odd week empty: {}", isEvenWeekEmpty, isOddWeekEmpty);
 
+        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
         for (int i = 0; i < source.size(); i++) {
             Document document = source.get(i);
             if (document == null) {
@@ -56,6 +60,7 @@ public class UneconServiceImpl implements MappingServiceRef<List<Document>> {
 
             DayOfWeek currentDayOfWeek;
             ScheduleDay currentWeekDay = null;
+            LocalDate weekStartDate = (i == 0) ? startOfWeek : startOfWeek.plusWeeks(1);
 
             for (Element row : elements) {
                 if (row.hasClass("new_day_border")) {
@@ -65,8 +70,9 @@ public class UneconServiceImpl implements MappingServiceRef<List<Document>> {
 
                         try {
                             currentDayOfWeek = uneconParseDayOfWeek(dayText);
-                            currentWeekDay = new ScheduleDay();
-
+                            LocalDate currentDate = weekStartDate.plusDays(currentDayOfWeek.getValue() - 1);
+                            currentWeekDay = new ScheduleDay(currentDate);
+                            currentWeekDay.setLocalDate(currentDate);
                             if (i == 0) {
                                 evenWeekSchedule.put(currentDayOfWeek, currentWeekDay);
                             } else {
@@ -173,6 +179,5 @@ public class UneconServiceImpl implements MappingServiceRef<List<Document>> {
         Elements rows = document.select("table tbody tr");
         return rows.isEmpty();
     }
-
 
 }
