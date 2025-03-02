@@ -1,4 +1,26 @@
+version: '3.8'
+
 services:
+  schedule-university-parser:
+      image: schedule-university-parser
+      build: .
+      container_name: schedule-university-parser-container
+      ports:
+        - "9090:8080"
+      restart: unless-stopped
+      environment:
+        DB_HOST: postgres
+        DB_PORT: 5432
+        DB_NAME: schedule_university_auth
+        DB_USER: abuser
+        DB_PASSWORD: abuser
+        SPRING_PROFILES_ACTIVE: prod
+        LOGGING_LEVE: INFO
+      healthcheck:
+        test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+        interval: 30s
+        timeout: 10s
+        retries: 3
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.1
     container_name: zookeeper

@@ -12,9 +12,9 @@ ENV SPRING_PROFILES_ACTIVE=prod
 
 ENV LOGGING_LEVEL=INFO
 
-EXPOSE 8080
+EXPOSE 9090
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -Dlogging.level.root=$LOGGING_LEVEL -jar /app/app.jar"]
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:9090/actuator/health || exit 1
