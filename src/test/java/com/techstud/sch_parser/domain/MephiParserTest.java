@@ -2,24 +2,26 @@ package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.MephiParser;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import com.techstud.sch_parser.service.impl.MappingServiceImpl;
+import com.techstud.sch_parser.service.MappingServiceRef;
+import com.techstud.sch_parser.service.impl.MephiServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 @Slf4j
 @Disabled
 public class MephiParserTest {
 
-    private MappingService mappingService;
+    private MappingServiceRef<List<Document>> mappingService;
 
     @BeforeEach
     public void setUp() {
-        mappingService = new MappingServiceImpl();
+        mappingService = new MephiServiceImpl();
     }
-
 
     @Test
     public void checkIsParserReturningNormalHtmlStructure1() throws Exception {
