@@ -1,14 +1,11 @@
 package com.techstud.sch_parser.domain;
 
 import com.techstud.sch_parser.domain.impl.BmstuParser;
-import com.techstud.sch_parser.domain.impl.SseuParser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.MappingServiceRef;
 import com.techstud.sch_parser.service.impl.BmstuServiceImpl;
-import com.techstud.sch_parser.service.impl.MappingServiceImpl;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.jupiter.api.Assertions;

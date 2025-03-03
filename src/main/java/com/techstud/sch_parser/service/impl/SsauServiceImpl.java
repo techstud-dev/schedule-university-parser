@@ -1,48 +1,39 @@
 package com.techstud.sch_parser.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.model.*;
-import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
-import com.techstud.sch_parser.model.api.response.bmstu.BmstuScheduleItem;
-import com.techstud.sch_parser.model.api.response.bmstu.BmstuTeacher;
-import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
-import com.techstud.sch_parser.model.api.response.sseu.SseuLessonDay;
-import com.techstud.sch_parser.model.api.response.sseu.SseuSubject;
-import com.techstud.sch_parser.model.api.response.tltsu.TltsuApiResponse;
-import com.techstud.sch_parser.model.api.response.tltsu.TltsuGroup;
-import com.techstud.sch_parser.model.api.response.tltsu.TltsuSchedule;
-import com.techstud.sch_parser.service.MappingService;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
+import java.time.DayOfWeek;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static com.techstud.sch_parser.util.ScheduleDayOfWeekParse.*;
-import static com.techstud.sch_parser.util.ScheduleLessonTypeParse.*;
 
 @Service
 @Slf4j
-public class MappingServiceImpl implements MappingService {
-
+public class SsauServiceImpl implements MappingServiceRef<List<Document>> {
+    /**
+     * <p>Maps the given list of SSAU documents to a {@link Schedule} object.</p>
+     * <p>This method processes the provided documents, extracting the even and odd week schedules
+     * and returns a populated {@link Schedule}. If no schedule data is found, it returns {@code null}.</p>
+     *
+     * @param source the list of {@link Document} objects, where the first element contains data for the even week
+     *               and the second element contains data for the odd week.
+     * @return a populated {@link Schedule} object containing the parsed even and odd week schedules,
+     *         or {@code null} if no valid schedule data is found.
+     * @throws EmptyScheduleException if no valid schedule data can be extracted from the documents.
+     */
     @Override
-    public Schedule mapSsauToSchedule(List<Document> documents) {
+    public Schedule map(List<Document> source) throws EmptyScheduleException {
         log.info("Start mapping SSAU data to schedule");
-        Element evenElement = documents.get(0)
+        Element evenElement = source.get(0)
                 .getElementsByClass("schedule")
                 .first();
 
-        Element oddElement = documents.get(1)
+        Element oddElement = source.get(1)
                 .getElementsByClass("schedule")
                 .first();
 
@@ -60,60 +51,12 @@ public class MappingServiceImpl implements MappingService {
         return schedule;
     }
 
-    @Override
-    public Schedule mapPgupsToSchedule(List<Document> documents) {
-        log.info("Start mapping PGUPS data to schedule");
-
-        Schedule schedule = new Schedule();
-        schedule.setSnapshotDate(new Date());
-        schedule.setEvenWeekSchedule(parsePgupsSchedule(documents.get(0)));
-        schedule.setOddWeekSchedule(parsePgupsSchedule(documents.get(1)));
-
-        log.info("Mapping PGUPS data to schedule {} finished", schedule);
-        return schedule;
-    }
-
-    private Map<DayOfWeek, ScheduleDay> parsePgupsSchedule(Document document) {
-        Map<DayOfWeek, ScheduleDay> schedule = new LinkedHashMap<>();
-        Elements scheduleDays = document.getElementsByTag("tbody");
-
-        scheduleDays.forEach(day -> {
-            DayOfWeek dayOfWeek = parseDayOfWeek(day.getElementsByClass("kt-font-dark").text().toLowerCase());
-            schedule.put(dayOfWeek, parsePgupsScheduleDay(day));
-        });
-
-        return schedule;
-    }
-
-    private ScheduleDay parsePgupsScheduleDay(Element dayElement) {
-        Map<TimeSheet, List<ScheduleObject>> lessons = new LinkedHashMap<>();
-
-        dayElement.getElementsByTag("tr").forEach(lesson -> {
-            String[] timeRange = lesson.getElementsByClass("text-center kt-shape-font-color-4")
-                    .text()
-                    .split("—");
-            TimeSheet timeSheet = new TimeSheet(timeRange[0].trim(), timeRange[1].trim());
-            lessons.put(timeSheet, parsePgupsScheduleObjects(lesson));
-        });
-
-        ScheduleDay scheduleDay = new ScheduleDay();
-        scheduleDay.setLessons(lessons);
-        return scheduleDay;
-    }
-
-    private List<ScheduleObject> parsePgupsScheduleObjects(Element lesson) {
-        List<ScheduleObject> scheduleObjects = new ArrayList<>();
-
-        ScheduleObject scheduleObject = new ScheduleObject();
-        scheduleObject.setName(lesson.getElementsByClass("mr-1").text().trim());
-        scheduleObject.setPlace(lesson.select("a[href^=https://rasp.pgups.ru/schedule/room]").text().trim());
-        scheduleObject.setType(ScheduleType.returnTypeByPgupsName(lesson.select("span[class^=badge]").text().trim()));
-        scheduleObject.setTeacher(lesson.select("div > a[href^=https://rasp.pgups.ru/schedule/teacher].kt-link").text().trim());
-
-        scheduleObjects.add(scheduleObject);
-        return scheduleObjects;
-    }
-
+    /**
+     * <p>Extracts the schedule for all days of the week (except Sunday) from the provided SSAU schedule element.</p>
+     *
+     * @param scheduleElement the root element containing the SSAU schedule.
+     * @return a map where the key is a {@link DayOfWeek} and the value is the corresponding {@link ScheduleDay}.
+     */
     private Map<DayOfWeek, ScheduleDay> getSsauSchedule(Element scheduleElement) {
         Map<DayOfWeek, ScheduleDay> scheduleDayMap = new LinkedHashMap<>();
         for (DayOfWeek day : DayOfWeek.values()) {
@@ -124,6 +67,13 @@ public class MappingServiceImpl implements MappingService {
         return scheduleDayMap;
     }
 
+    /**
+     * <p>Extracts the schedule for a specific day of the week from the provided SSAU schedule element.</p>
+     *
+     * @param dayOfWeek the day of the week to extract the schedule for.
+     * @param element the root element containing the SSAU schedule.
+     * @return a {@link ScheduleDay} representing the schedule for the given day.
+     */
     private ScheduleDay getSsauScheduleDay(DayOfWeek dayOfWeek, Element element) {
         Elements scheduleItemElements = element.getElementsByClass("schedule__item");
         List<Element> ssauTimeSheets = element.getElementsByClass("schedule__time");
@@ -155,6 +105,12 @@ public class MappingServiceImpl implements MappingService {
         return scheduleDay;
     }
 
+    /**
+     * <p>Extracts the lessons for a specific SSAU schedule item element.</p>
+     *
+     * @param element the SSAU schedule item element to extract lessons from.
+     * @return a list of {@link ScheduleObject} representing the lessons.
+     */
     private List<ScheduleObject> getSsauScheduleObject(Element element) {
         List<ScheduleObject> scheduleObjects = new ArrayList<>();
         List<Element> scheduleLessons = element.getElementsByClass("schedule__lesson");
@@ -170,6 +126,12 @@ public class MappingServiceImpl implements MappingService {
         return scheduleObjects;
     }
 
+    /**
+     * <p>Extracts the group names from the provided SSAU schedule group element.</p>
+     *
+     * @param scheduleGroupsElement the SSAU schedule group element containing group names.
+     * @return a list of group names as strings.
+     */
     private List<String> getSsauScheduleGroups(Elements scheduleGroupsElement) {
         List<String> groupNames = new ArrayList<>();
         List<Element> aElements = scheduleGroupsElement.get(0).getElementsByTag("a");
@@ -185,5 +147,4 @@ public class MappingServiceImpl implements MappingService {
         }
         return groupNames;
     }
-
 }

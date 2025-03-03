@@ -7,14 +7,12 @@ import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.tltsu.TltsuApiResponse;
 import com.techstud.sch_parser.model.api.response.tltsu.TltsuSchedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 

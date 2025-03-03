@@ -1,13 +1,14 @@
 package com.techstud.sch_parser.domain.impl;
 
 import com.techstud.sch_parser.domain.Parser;
+import com.techstud.sch_parser.exception.EmptyScheduleException;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import lombok.RequiredArgsConstructor;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,13 +20,32 @@ import java.util.TimeZone;
 
 @Component("SSAU")
 @Slf4j
-@RequiredArgsConstructor
 public class SsauParser implements Parser {
 
-    private final MappingService mappingService;
+    private final MappingServiceRef<List<Document>> ssauService;
 
+    /**
+     * <p>Constructs a {@link SsauParser} with the specified SSAU mapping service.</p>
+     *
+     * @param ssauService the {@link MappingServiceRef} responsible for processing
+     *                    SSAU schedule data, expected to handle {@code List<Document>}.
+     */
+    public SsauParser(
+            @Qualifier("ssauServiceImpl") MappingServiceRef<List<Document>> ssauService) {
+        this.ssauService = ssauService;
+    }
+
+    /**
+     * <p>Fetches and parses the schedule from the SSAU API based on the provided task parameters.</p>
+     * <p>Retrieves the schedule for both even and odd weeks, and processes it into a {@link Schedule} object.</p>
+     *
+     * @param task the {@link ParsingTask} containing group and subgroup identifiers.
+     * @return a {@link Schedule} object parsed from the retrieved HTML documents for both even and odd weeks.
+     * @throws IOException if an error occurs while connecting to the API or retrieving the data.
+     * @throws EmptyScheduleException if the fetched schedule is empty or invalid.
+     */
     @Override
-    public Schedule parseSchedule(ParsingTask task) throws IOException {
+    public Schedule parseSchedule(ParsingTask task) throws IOException, EmptyScheduleException {
         String[] parseWeeks = getCurrentWeekNumbers(TimeZone.getTimeZone("Europe/Samara"));
         final String[] evenParameters = {String.valueOf(task.getGroupId()), parseWeeks[0]};
         final String[] oddParameters = {String.valueOf(task.getGroupId()), parseWeeks[1]};
@@ -39,9 +59,17 @@ public class SsauParser implements Parser {
 
         Document oddDoc = Jsoup.connect(oddUrl).userAgent(userAgent).referrer(referrer).get();
         log.info("Successfully fetching data from SSAU API");
-        return mappingService.mapSsauToSchedule(List.of(evenDoc, oddDoc));
+        return ssauService.map(List.of(evenDoc, oddDoc));
     }
 
+    /**
+     * <p>Calculates the current study weeks for a given time zone based on the academic year start.</p>
+     * <p>The method returns the numbers of the current even and odd study weeks.</p>
+     *
+     * @param timeZone the {@link TimeZone} to be used for the calculation, which determines the current local time.
+     * @return an array of two strings representing the numbers of the current study weeks:
+     *         the first element is the odd week and the second element is the even week.
+     */
     private String[] getCurrentWeekNumbers(TimeZone timeZone) {
         String[] parseWeeks;
         Calendar currentCalendar = Calendar.getInstance();

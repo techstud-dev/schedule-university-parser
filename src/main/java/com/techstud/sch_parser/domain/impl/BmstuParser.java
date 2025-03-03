@@ -5,9 +5,7 @@ import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.bmstu.BmstuApiResponse;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
 import com.techstud.sch_parser.service.MappingServiceRef;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -17,10 +15,8 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import javax.swing.text.Document;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.List;
 
 @Component("BMSTU")
 @Slf4j
@@ -34,8 +30,7 @@ public class BmstuParser implements Parser {
      * @param mappingServiceRef service Mapping, introduced through Spring. Annotation {@link Qualifier} indicates the specific implementation of the service
      */
     public BmstuParser(
-            @Qualifier("bmstuServiceImpl") MappingServiceRef<BmstuApiResponse> mappingServiceRef
-    ){
+            @Qualifier("bmstuServiceImpl") MappingServiceRef<BmstuApiResponse> mappingServiceRef){
         this.mappingServiceRef = mappingServiceRef;
         this.httpClient = HttpClients.createDefault();
     }
