@@ -39,8 +39,7 @@ public class SpbstuParser implements Parser {
      *                   Annotation {@link Qualifier} indicates the specific implementation of the service for working with data SPbSTU
      */
     public SpbstuParser(
-            @Qualifier("spbstuServiceImpl") MappingServiceRef<List<Document>> serviceRef
-    ){
+            @Qualifier("spbstuServiceImpl") MappingServiceRef<List<Document>> serviceRef){
         this.serviceRef = serviceRef;
     }
 

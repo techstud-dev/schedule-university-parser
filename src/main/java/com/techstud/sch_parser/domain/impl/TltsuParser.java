@@ -42,8 +42,7 @@ public class TltsuParser implements Parser {
      */
     public TltsuParser(
             @Qualifier("TItsuServiceImpl") MappingServiceRef<List<TltsuApiResponse>> mappingServiceRef,
-            CloseableHttpClient httpClient
-    ) {
+            CloseableHttpClient httpClient) {
         this.mappingServiceRef = mappingServiceRef;
         this.httpClient = httpClient;
     }

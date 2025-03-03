@@ -38,8 +38,7 @@ public class SseuParser implements Parser {
      */
     public SseuParser(
             CloseableHttpClient httpClient,
-            @Qualifier("sseuServiceImpl") MappingServiceRef<List<SseuApiResponse>> mappingServiceRef
-    ){
+            @Qualifier("sseuServiceImpl") MappingServiceRef<List<SseuApiResponse>> mappingServiceRef){
         this.httpClient = httpClient;
         this.mappingServiceRef = mappingServiceRef;
     }
