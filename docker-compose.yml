@@ -8,14 +8,6 @@ services:
       ports:
         - "9090:8080"
       restart: unless-stopped
-      environment:
-        DB_HOST: postgres
-        DB_PORT: 5432
-        DB_NAME: schedule_university_auth
-        DB_USER: abuser
-        DB_PASSWORD: abuser
-        SPRING_PROFILES_ACTIVE: prod
-        LOGGING_LEVE: INFO
       healthcheck:
         test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
         interval: 30s
