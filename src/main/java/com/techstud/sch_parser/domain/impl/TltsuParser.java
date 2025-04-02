@@ -7,13 +7,13 @@ import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.tltsu.TltsuApiResponse;
 import com.techstud.sch_parser.model.api.response.tltsu.TltsuSchedule;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import lombok.RequiredArgsConstructor;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -26,14 +26,30 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component("TLTSU")
-@RequiredArgsConstructor
 @Slf4j
 public class TltsuParser implements Parser {
 
-    private final MappingService mappingService;
+    private final MappingServiceRef<List<TltsuApiResponse>> mappingServiceRef;
 
     private final CloseableHttpClient httpClient;
 
+
+    /**
+     * @param mappingServiceRef mapping service implemented through Spring. Annotation{@link Qualifier} indicates the specific implementation of the service
+     * @param httpClient HTTP-client to execute requests
+     */
+    public TltsuParser(
+            @Qualifier("TItsuServiceImpl") MappingServiceRef<List<TltsuApiResponse>> mappingServiceRef,
+            CloseableHttpClient httpClient) {
+        this.mappingServiceRef = mappingServiceRef;
+        this.httpClient = httpClient;
+    }
+
+    /**
+     * @param task parsing task containing the necessary parameters (for example, group identifier)
+     * @return schedule object {@link Schedule}, received after the mapping data from API
+     * @throws Exception the exception that may occur when performing HTTP-call or data mapping
+     */
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
         String[] dates = getRequestDates();
@@ -59,9 +75,13 @@ public class TltsuParser implements Parser {
         evenResponseApi.setSchedules(evenResponse);
 
         log.info("Successfully fetching data from TLTSU API");
-        return mappingService.mapTltsuToSchedule(List.of(oddResponseApi, evenResponseApi));
+        return mappingServiceRef.map(List.of(oddResponseApi, evenResponseApi));
     }
 
+    /**
+     * <p>Dates are adjusted taking into account the temporary zone Samara (UTC+4)</p>
+     * @return the array of lines containing dates in a format suitable for requests for the API
+     */
     private String[] getRequestDates() {
         //У ТГУ очень странно формируется расписание, оно как бы в UTC+0, но с +04:00
         ZoneId samaraZone = ZoneId.of("Europe/Samara");
@@ -85,6 +105,12 @@ public class TltsuParser implements Parser {
                 .map(date -> date.replace("+04", "Z")).toArray(String[]::new);
     }
 
+
+    /**
+     * @param getRequest HTTP-request type GET.
+     * @return string JSON,containing the response from the server. If the answer is empty, null returns
+     * @throws IOException the exception that may occur when performing HTTP request
+     */
     private String getSchduleJsonAsString(HttpGet getRequest) throws IOException {
         try (CloseableHttpResponse response = httpClient.execute(getRequest)) {
             if (response.getEntity() != null) {

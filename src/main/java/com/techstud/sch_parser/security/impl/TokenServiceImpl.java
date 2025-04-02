@@ -3,6 +3,7 @@ package com.techstud.sch_parser.security.impl;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 @Service
+@Slf4j
 public class TokenServiceImpl implements com.techstud.sch_parser.security.TokenService {
 
     @Value("${jwt.secret.key}")
@@ -31,11 +33,13 @@ public class TokenServiceImpl implements com.techstud.sch_parser.security.TokenS
 
     @Override
     public String generateServiceToken() {
-        return JWT.create()
+        var jwtCredit = JWT.create()
                 .withIssuer(issuer)
                 .withClaim("type", "jwt")
                 .withIssuedAt(Date.from(Instant.now()))
                 .withExpiresAt(Date.from(Instant.now().plus(2, ChronoUnit.MINUTES)))
                 .sign(algorithm);
+        log.info("Generated JWT token: {}", jwtCredit);
+        return jwtCredit;
     }
 }

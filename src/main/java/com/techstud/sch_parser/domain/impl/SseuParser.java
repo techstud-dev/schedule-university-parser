@@ -5,13 +5,13 @@ import com.techstud.sch_parser.domain.Parser;
 import com.techstud.sch_parser.model.Schedule;
 import com.techstud.sch_parser.model.api.response.sseu.SseuApiResponse;
 import com.techstud.sch_parser.model.kafka.request.ParsingTask;
-import com.techstud.sch_parser.service.MappingService;
-import lombok.RequiredArgsConstructor;
+import com.techstud.sch_parser.service.MappingServiceRef;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Component("SSEU")
 @Slf4j
 public class SseuParser implements Parser {
@@ -28,8 +27,24 @@ public class SseuParser implements Parser {
 
     private final CloseableHttpClient httpClient;
 
-    private final MappingService mappingService;
+    private final MappingServiceRef<List<SseuApiResponse>> mappingServiceRef;
 
+    /**
+     * @param httpClient HTTP-client to execute requests
+     * @param mappingServiceRef mapping service implemented through Spring. Annotation {@link Qualifier} indicates the specific implementation of the service
+     */
+    public SseuParser(
+            CloseableHttpClient httpClient,
+            @Qualifier("sseuServiceImpl") MappingServiceRef<List<SseuApiResponse>> mappingServiceRef){
+        this.httpClient = httpClient;
+        this.mappingServiceRef = mappingServiceRef;
+    }
+
+    /**
+     * @param task parsing task containing the necessary parameters (for example, group identifier).
+     * @return schedule object {@link Schedule}, received after the mapping data from API
+     * @throws Exception the exception that may occur when performing HTTP request or data mapping
+     */
     @Override
     public Schedule parseSchedule(ParsingTask task) throws Exception {
 
@@ -54,9 +69,14 @@ public class SseuParser implements Parser {
         List<SseuApiResponse> sseuApiResponseList = List.of(currentWeekResponse, nextWeekResponse);
 
         log.info("Successfully fetching data from SSEU API");
-        return mappingService.mapSseuToSchedule(sseuApiResponseList);
+        return mappingServiceRef.map(sseuApiResponseList);
     }
 
+    /**
+     * @param getRequest HTTP request type GET
+     * @return JSON line containing a response from the server. If the answer is empty, null returns
+     * @throws IOException an exception that may occur when performing an HTTP request
+     */
     private String getSchduleJsonAsString(HttpGet getRequest) throws IOException {
         try (CloseableHttpResponse response = httpClient.execute(getRequest)) {
             if (response.getEntity() != null) {
